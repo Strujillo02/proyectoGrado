@@ -1,5 +1,6 @@
 package com.backend.backend.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
@@ -44,42 +45,47 @@ public class Usuario  implements UserDetails {
     String tipo_identificacion;
 
     @Column(name = "contrasena")
+    @JsonIgnore // Esto evitará que se serialize la contraseña
     String contrasena;
 
     @Column(name = "tipo_usuario", length = 50)
     String tipo_usuario;
 
-
+    @JsonIgnore
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority(tipo_usuario));
     }
-
+    @JsonIgnore
     @Override
     public String getPassword() {
         return this.contrasena;
     }
-
+    @JsonIgnore
     @Override
     public String getUsername() {
         return this.identificacion;
     }
 
+    @JsonIgnore
     @Override
     public boolean isAccountNonExpired() {
         return true;
     }
 
+    @JsonIgnore
     @Override
     public boolean isAccountNonLocked() {
         return true;
     }
 
+    @JsonIgnore
     @Override
     public boolean isCredentialsNonExpired() {
         return true;
     }
 
+    @JsonIgnore
     @Override
     public boolean isEnabled() {
         return true;
