@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -19,12 +18,19 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
 
     public AuthResponse login(LoginRequest request) {
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getIdentificacion(), request.getContrasena()));
-        UserDetails user = userRepository.findByIdentificacion(request.getIdentificacion()).orElseThrow();
-        String token =jwtService.getToken(user);
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getIdentificacion(), request.getContrasena())
+        );
+
+        // Obtenemos el usuario desde el repositorio
+        Usuario usuario = userRepository.findByIdentificacion(request.getIdentificacion())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String token = jwtService.getToken(usuario);
 
         return AuthResponse.builder()
                 .token(token)
+                .usuario(usuario) // Incluimos el usuario en la respuesta
                 .build();
     }
 
@@ -37,9 +43,14 @@ public class AuthService {
                 .tipo_identificacion(request.getTipo_identificacion())
                 .tipo_usuario(request.getTipo_usuario())
                 .build();
+
         userRepository.save(usuario);
 
-        return  AuthResponse.builder().token(jwtService.getToken(usuario)).build();
+        String token = jwtService.getToken(usuario);
 
+        return AuthResponse.builder()
+                .token(token)
+                .usuario(usuario) // Incluimos el usuario en la respuesta
+                .build();
     }
 }
