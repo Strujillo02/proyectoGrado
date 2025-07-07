@@ -1,10 +1,8 @@
-package com.backend.backend.Authentication;
+package com.backend.backend.authentication;
+
 
 import com.backend.backend.models.Usuario;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Data
 @Builder
@@ -12,5 +10,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AuthResponse {
     String token;
-    Usuario usuario;
+    Usuario user;
 }

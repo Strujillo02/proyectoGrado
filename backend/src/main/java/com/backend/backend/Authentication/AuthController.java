@@ -1,4 +1,4 @@
-package com.backend.backend.Authentication;
+package com.backend.backend.authentication;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -24,3 +24,4 @@ public class AuthController {
         return ResponseEntity.ok(authService.register(request));
     }
 }
+

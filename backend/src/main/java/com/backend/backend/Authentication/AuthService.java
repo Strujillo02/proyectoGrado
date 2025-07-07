@@ -1,4 +1,4 @@
-package com.backend.backend.Authentication;
+package com.backend.backend.authentication;
 
 import com.backend.backend.models.Usuario;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +28,7 @@ public class AuthService {
 
         return AuthResponse.builder()
                 .token(token)
-                .usuario(usuario) // Incluimos el usuario en la respuesta
+                .user(usuario) // Incluimos el usuario en la respuesta
                 .build();
     }
 
@@ -48,7 +48,7 @@ public class AuthService {
 
         return AuthResponse.builder()
                 .token(token)
-                .usuario(usuario) // Incluimos el usuario en la respuesta
+                .user(usuario) // Incluimos el usuario en la respuesta
                 .build();
     }
 }

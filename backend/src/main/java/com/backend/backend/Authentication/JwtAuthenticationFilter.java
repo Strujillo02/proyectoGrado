@@ -1,4 +1,4 @@
-package com.backend.backend.Authentication;
+package com.backend.backend.authentication;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -50,10 +50,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private String getTokenFromRequest(HttpServletRequest request) {
-    final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-    if (StringUtils.hasText(authHeader)&&(authHeader.startsWith("Bearer "))){
-        return authHeader.substring(7);
-    }
-    return null;
+        final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+        if (StringUtils.hasText(authHeader)&&(authHeader.startsWith("Bearer "))){
+            return authHeader.substring(7);
+        }
+        return null;
     }
 }
+

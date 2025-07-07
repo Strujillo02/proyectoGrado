@@ -2,25 +2,25 @@ class User {
   // Representa todos los atributos de la tabla usuarios en la base de datos
   final int id;
   final String nombre;
-  final String telefono;
+  final String? telefono;
   final String email;
   final String identificacion;
-  final String genero;
-  final String estado;
+  final String? genero;
+  final String? estado;
   final String tipo_identificacion;
-  final String contrasena;
+  final String? contrasena;
   final String tipo_usuario;
 
   User({
     required this.id,
     required this.nombre,
-    required this.telefono,
+    this.telefono,
     required this.email,
     required this.identificacion,
-    required this.genero,
-    required this.estado,
+    this.genero,
+    this.estado,
     required this.tipo_identificacion,
-    required this.contrasena,
+    this.contrasena,
     required this.tipo_usuario,
   });
 

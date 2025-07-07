@@ -39,7 +39,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
     if (result['success']) {
       if (!mounted) return;
-      context.go('/login');
+      context.go('/');
     } else {
       setState(() {
         errorMessage = result['message'] ?? 'Error al registrarse';
@@ -100,7 +100,8 @@ class _RegisterPageState extends State<RegisterPage> {
                         border: OutlineInputBorder(),
                       ),
                       validator:
-                        (value) => value!.isEmpty ? 'Ingresa tu nombre' : null,
+                          (value) =>
+                              value!.isEmpty ? 'Ingresa tu nombre' : null,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -113,7 +114,8 @@ class _RegisterPageState extends State<RegisterPage> {
                         border: OutlineInputBorder(),
                       ),
                       validator:
-                        (value) => value!.isEmpty ? 'Ingresa tu correo' : null,
+                          (value) =>
+                              value!.isEmpty ? 'Ingresa tu correo' : null,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -144,8 +146,11 @@ class _RegisterPageState extends State<RegisterPage> {
                           _selectedDocumentType = value;
                         });
                       },
-                      validator: (value) =>
-                          value == null ? 'Selecciona un tipo de documento' : null,
+                      validator:
+                          (value) =>
+                              value == null
+                                  ? 'Selecciona un tipo de documento'
+                                  : null,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -195,9 +200,9 @@ class _RegisterPageState extends State<RegisterPage> {
                           return 'Confirma tu contraseña';
                         }
                         if (value != contrasenaController.text) {
-                        return 'Las contraseñas no coinciden';
-                      }
-                      return null;
+                          return 'Las contraseñas no coinciden';
+                        }
+                        return null;
                       },
                     ),
                   ),
