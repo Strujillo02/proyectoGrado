@@ -15,7 +15,7 @@ class AuthService {
     String contrasena,
   ) async {
     final response = await http.post(
-      Uri.parse('${baseUrl}login'),
+      Uri.parse('${baseUrl}auth/login'),
       //* especifica el tipo de contenido que se va a enviar
       //* el servidor espera recibir un JSON
       headers: {'Content-Type': 'application/json'},
@@ -35,6 +35,7 @@ class AuthService {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', data['token']);
         await prefs.setString('user', jsonEncode(data['user']));
+     //   print(jsonEncode(data['user']));
       } catch (e) {
         debugPrint('Error al guardar token en SharedPreferences: $e');
       }
@@ -43,7 +44,9 @@ class AuthService {
     } else {
       //* si el servidor devuelve un error, se convierte el objeto a JSON
       //* y se devuelve el mensaje de error
+
       final data = jsonDecode(response.body);
+     // print(jsonEncode(data['user']));
       return {'success': false, 'message': data['message'] ?? 'Error en login'};
     }
   }
@@ -58,7 +61,7 @@ class AuthService {
     String contrasena,
   ) async {
     final response = await http.post(
-      Uri.parse('${baseUrl}users'),
+      Uri.parse('${baseUrl}auth/register'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'nombre': nombre,
@@ -70,7 +73,7 @@ class AuthService {
       }),
     );
 
-    if (response.statusCode == 201) {
+    if (response.statusCode == 200 || response.statusCode == 201) {
       return {'success': true};
     } else {
       final data = jsonDecode(response.body);
@@ -136,7 +139,7 @@ class AuthService {
         } else if (user.tipo_usuario.toString() == ('Medico')) {
           return 'Medico';
         } else if (user.tipo_usuario.toString() == ('Paciente')) {
-          return 'paciente';
+          return 'Paciente';
         }
       }
     } catch (e) {
