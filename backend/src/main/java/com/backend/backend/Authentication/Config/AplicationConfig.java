@@ -1,6 +1,6 @@
-package com.backend.backend.config;
+package com.backend.backend.Authentication.Config;
 
-import com.backend.backend.repositories.UserRepository;
+import com.backend.backend.Authentication.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
