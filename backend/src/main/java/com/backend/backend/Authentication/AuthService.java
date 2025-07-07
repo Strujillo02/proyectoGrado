@@ -1,11 +1,9 @@
-package com.backend.backend.controllers;
+package com.backend.backend.Authentication;
 
 import com.backend.backend.models.Usuario;
-import com.backend.backend.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 

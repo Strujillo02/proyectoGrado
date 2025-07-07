@@ -1,4 +1,4 @@
-package com.backend.backend.controllers;
+package com.backend.backend.Authentication;
 
 import com.backend.backend.models.Usuario;
 import lombok.AllArgsConstructor;
