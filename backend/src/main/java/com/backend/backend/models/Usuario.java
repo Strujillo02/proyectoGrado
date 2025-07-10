@@ -58,7 +58,7 @@ public class Usuario  implements UserDetails {
     @JsonIgnore
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(tipo_usuario));
+        return List.of(new SimpleGrantedAuthority("ROLE_" + tipo_usuario));
     }
     @JsonIgnore
     @Override

@@ -1,0 +1,33 @@
+package com.backend.backend.services;
+
+import com.backend.backend.models.Usuario;
+import com.backend.backend.repositories.UsuarioRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+
+@Service
+public class UsuarioService {
+    @Autowired
+    UsuarioRepository usuarioRepository;
+
+    public ArrayList<Usuario> obtenerUsuarios(){
+        return  (ArrayList<Usuario>) usuarioRepository.findAll();
+    }
+
+    public Usuario guardarUsuario(Usuario usuario){
+        return usuarioRepository.save(usuario);
+    }
+
+    public void eliminarUsuario(int id) {
+        usuarioRepository.deleteById(id);
+    }
+
+    public Usuario actualizarUsuario(Usuario usuario) {
+        return usuarioRepository.save(usuario);
+    }
+
+    //public Optional<Usuario> obtener
+
+}
