@@ -1,6 +1,7 @@
 class User {
   // Representa todos los atributos de la tabla usuarios en la base de datos
-  final int id;
+  final int? id;
+
   final String nombre;
   final String? telefono;
   final String email;
@@ -12,7 +13,8 @@ class User {
   final String tipo_usuario;
 
   User({
-    required this.id,
+    this.id,
+
     required this.nombre,
     this.telefono,
     required this.email,

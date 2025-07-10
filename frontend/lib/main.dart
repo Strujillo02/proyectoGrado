@@ -4,7 +4,7 @@ import 'package:frontend/routes/app_router.dart';
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized(); //! Importante para que funcione el dotenv, inicializa el widget
-   await dotenv.load(fileName: ".env"); //! Carga el archivo .env
+  await dotenv.load(fileName: ".env"); //! Carga el archivo .env
   runApp(const MyApp());
 }
 
