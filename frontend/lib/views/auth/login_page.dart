@@ -40,7 +40,7 @@ class _LoginPageState extends State<LoginPage> {
       final authService = AuthService();
       final tipoUsuario = await authService.getUserType();
       if (tipoUsuario == 'Administrador') {
-        context.go('/register');
+        context.go('/home/admin');
       } else if (tipoUsuario == 'Paciente') {
         context.go('/register');
       } else if (tipoUsuario == 'Medico') {

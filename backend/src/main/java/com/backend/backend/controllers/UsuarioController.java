@@ -1,6 +1,6 @@
 package com.backend.backend.controllers;
 
-import com.backend.backend.authentication.JwtService;
+import com.backend.backend.Authentication.JwtService;
 import com.backend.backend.models.Usuario;
 import com.backend.backend.repositories.UsuarioRepository;
 import com.backend.backend.services.UsuarioService;
