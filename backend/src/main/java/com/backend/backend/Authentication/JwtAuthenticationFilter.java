@@ -1,5 +1,6 @@
 package com.backend.backend.authentication;
 
+import io.jsonwebtoken.Jwts;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,6 +18,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+
+
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -28,33 +31,44 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         final String token = getTokenFromRequest(request);
 
-        final String username;
-        if(token==null){
+        if (token == null) {
             filterChain.doFilter(request, response);
             return;
         }
-        username=jwtService.getUsernameFromToken(token);
 
-        if(username!=null && SecurityContextHolder.getContext().getAuthentication()==null){
-            UserDetails userDetails=userDetailsService.loadUserByUsername(username);
-            if(jwtService.isTokenValid(token, userDetails)){
-                UsernamePasswordAuthenticationToken authenticationToken =  new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        try {
+            Jwts.parserBuilder()
+                    .setSigningKey(jwtService.getKey())
+                    .build()
+                    .parseClaimsJws(token);
 
-                authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-            }
+            UsernamePasswordAuthenticationToken authentication = getAuthentication(token);
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+        } catch (Exception e) {
+            System.out.println("Error al verificar el token: " + e.getMessage());
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token inválido");
+            return;
         }
 
         filterChain.doFilter(request, response);
     }
 
+    private UsernamePasswordAuthenticationToken getAuthentication(String token) {
+        String username = jwtService.getUsernameFromToken(token);
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+
+        return new UsernamePasswordAuthenticationToken(
+                username,
+                null, // Contraseña no necesaria si ya estás autenticado
+                userDetails.getAuthorities()
+        );
+    }
+
     private String getTokenFromRequest(HttpServletRequest request) {
-        final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-        if (StringUtils.hasText(authHeader)&&(authHeader.startsWith("Bearer "))){
+        final String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
             return authHeader.substring(7);
         }
         return null;
     }
 }
-
