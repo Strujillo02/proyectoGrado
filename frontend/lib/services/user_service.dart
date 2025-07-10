@@ -15,7 +15,7 @@ class UserService {
     final headers = await ApiHelper.getHeadersWithAuth(); // Obtiene los headers con el token
 
     final response = await http.get(
-      Uri.parse('${baseUrl}usuarios'),
+      Uri.parse('${baseUrl}user/v1/get'),
       headers: headers, // Se incluye el token aquí
     );
 
@@ -60,7 +60,7 @@ class UserService {
   /// Devuelve true si la creación fue exitosa, false en caso contrario.
   Future<bool> createUsuario(User est) async {
     try {
-      final uri = Uri.parse('${baseUrl}usuario-create');
+      final uri = Uri.parse('${baseUrl}user/v1/create');
       final headers = await ApiHelper.getHeadersWithAuth(); // Incluye Content-Type y Authorization
       final body = jsonEncode(est.toJson()); // Convierte el objeto a JSON
 
@@ -84,7 +84,7 @@ class UserService {
     try {
       final headers = await ApiHelper.getHeadersWithAuth(); // Incluye token
       final response = await http.delete(
-        Uri.parse('${baseUrl}usuario/$id'),
+        Uri.parse('${baseUrl}user/v1/delete/$id'),
         headers: headers, // Autorización
       );
 

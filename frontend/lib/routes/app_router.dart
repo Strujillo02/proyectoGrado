@@ -8,19 +8,20 @@ final GoRouter appRouter = GoRouter(
   routes: [
     GoRoute(
       path: '/',
-      name: 'gestionarUsuarios',
-      builder: (context, state) => const HomeAdmin(), 
+      name: 'login',
+      builder: (context, state) => const LoginPage(),
     ),
- /*   GoRoute(
+    GoRoute(
       path: '/register',
       name: 'register',
-      builder: (context, state) => const RegisterPage(), 
-    ),*/
+      builder: (context, state) => const RegisterPage(),
+    ),
     GoRoute(
       path: '/gestionar/usuarios',
-      name: 'gestinarUsu',
+      name: 'gestinarUsuarios',
       builder: (context, state) => const UserManagementPage(),
-    ),/*
+    ),
+    /*
     GoRoute(
       path: '/gestionar/especialidades',
       name: 'gestinarEspecialidades',
@@ -31,5 +32,5 @@ final GoRouter appRouter = GoRouter(
       name: 'homeAdmin',
       builder: (context, state) => const HomeAdmin(),
     ),
-  ]
+  ],
 );
