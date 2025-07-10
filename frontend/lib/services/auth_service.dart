@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend/models/user.dart';
 import 'package:http/http.dart' as http;
-import 'package:path/path.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
