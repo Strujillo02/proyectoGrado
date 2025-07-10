@@ -1,0 +1,193 @@
+{
+	"info": {
+		"_postman_id": "0061a835-8fb9-4f6f-811a-743ce8235ab6",
+		"name": "Api Proyecto de grado",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "38664439"
+	},
+	"item": [
+		{
+			"name": "usuario",
+			"item": [
+				{
+					"name": "crear",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiJ9.eyJhdXRob3JpdGllcyI6WyJST0xFX0FkbWluaXN0cmFkb3IiXSwic3ViIjoiMTIzNDU2NzgiLCJpYXQiOjE3NTIxODI3NzUsImV4cCI6MTc1MjE4NDIxNX0.oNBodATm1moynVaq9-VDyAUMacypYKiHu1qdF0L3i_M",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"nombre\": \"calero\",\r\n    \"telefono\": \"311111111\",\r\n    \"email\": \"100775@gmail.com\",\r\n    \"identificacion\": \"10077511\",\r\n    \"tipo_identificacion\": \"cedula\",\r\n    \"contrasena\": \"100775\",\r\n    \"tipo_usuario\": \"Paciente\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/user/v1/create",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"user",
+								"v1",
+								"create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "eliminar",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiJ9.eyJhdXRob3JpdGllcyI6WyJST0xFX0FkbWluaXN0cmFkb3IiXSwic3ViIjoiMTIzNDU2NzgiLCJpYXQiOjE3NTIxODI3NzUsImV4cCI6MTc1MjE4NDIxNX0.oNBodATm1moynVaq9-VDyAUMacypYKiHu1qdF0L3i_M",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\": \"53\",\r\n    \"nombre\": \"calerrrro\",\r\n    \"telefono\": \"311111111\",\r\n    \"email\": \"100775@gmail.com\",\r\n    \"identificacion\": \"10077511\",\r\n    \"tipo_identificacion\": \"cedula\",\r\n    \"contrasena\": \"100775\",\r\n    \"tipo_usuario\": \"Paciente\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/user/v1/delete/56",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"user",
+								"v1",
+								"delete",
+								"56"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "listar todos",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiJ9.eyJhdXRob3JpdGllcyI6WyJST0xFX1BhY2llbnRlIl0sInN1YiI6IjExMSIsImlhdCI6MTc1MjE4MjU2MiwiZXhwIjoxNzUyMTg0MDAyfQ.OCKu3qTZce2Ls3mbt-KCi_VT_Jem2VHXaS6f83Rxhcg",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/user/v1/get",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"user",
+								"v1",
+								"get"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "login",
+			"item": [
+				{
+					"name": "login",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"identificacion\": \"12345678\",\r\n  \"contrasena\": \"12345678\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/auth/login",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "register",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"nombre\": \"Admin User\",\r\n  \"email\": \"admin@example.com\",\r\n  \"identificacion\": \"12345678\",\r\n  \"tipo_identificacion\": \"CC\",\r\n  \"contrasena\": \"12345678\",\r\n  \"tipo_usuario\": \"Administrador\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/auth/register",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"auth",
+								"register"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
