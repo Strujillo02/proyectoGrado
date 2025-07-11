@@ -16,6 +16,7 @@ public class UsuarioService {
     private PasswordEncoder passwordEncoder;
 
     public ArrayList<Usuario> obtenerUsuarios(){
+
         return  (ArrayList<Usuario>) usuarioRepository.findAll();
     }
 
