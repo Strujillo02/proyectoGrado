@@ -368,6 +368,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
           itemBuilder: (context, index) {
             final user = snapshot.data![index];
             return Card(
+              color: const Color.fromARGB(255, 208, 221, 233),
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: ListTile(
                 title: Text(user.nombre),
@@ -381,63 +382,75 @@ class _UserManagementPageState extends State<UserManagementPage> {
                     Text('Tipo de usuario: ${user.tipo_usuario}'),
                   ],
                 ),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () async {
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder:
-                          (ctx) => AlertDialog(
-                            title: const Text('¿Eliminar usuario?'),
-                            content: const Text(
-                              '¿Está seguro que desea eliminar?',
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(ctx, false),
-                                child: const Text('Cancelar'),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Botón de editar
+                    IconButton(
+                      icon: const Icon(
+                        Icons.edit,
+                        color: Colors.green,
+                      ), // Ícono de editar
+                      onPressed: () {
+                        context.go('/usuario/editar/${user.id}');
+                      },
+                    ),
+                    // Botón de eliminar (ya existente)
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Color.fromARGB(255, 165, 26, 16)),
+                      onPressed: () async {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder:
+                              (ctx) => AlertDialog(
+                                title: const Text('¿Eliminar usuario?'),
+                                content: const Text(
+                                  '¿Está seguro que desea eliminar?',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(ctx, false),
+                                    child: const Text('Cancelar'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(ctx, true),
+                                    child: const Text('Eliminar'),
+                                  ),
+                                ],
                               ),
-                              TextButton(
-                                onPressed: () => Navigator.pop(ctx, true),
-                                child: const Text('Eliminar'),
+                        );
+                        if (confirm == true) {
+                          final eliminado = await _userService.deleteUsuario(
+                            user.id!,
+                          );
+                          if (eliminado) {
+                            final updatedUsuarios = _userService.getUsuarios();
+                            setState(() {
+                              _futureUsuarios = updatedUsuarios;
+                            });
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Usuario eliminado correctamente',
+                                ),
+                                backgroundColor: Colors.green,
+                                duration: Duration(seconds: 2),
                               ),
-                            ],
-                          ),
-                    );
-
-                    if (confirm == true) {
-                      final eliminado = await _userService.deleteUsuario(
-                        user.id!,
-                      );
-                      if (eliminado) {
-                        final updatedUsuarios = _userService.getUsuarios();
-                        setState(() {
-                          _futureUsuarios = updatedUsuarios;
-                        });
-
-                        // Muestra SnackBar de éxito
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Usuario eliminado correctamente'),
-                            backgroundColor: Colors.green,
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Error al eliminar el usuario'),
-                            backgroundColor: Colors.red,
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
-                      }
-                    }
-                  },
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Error al eliminar el usuario'),
+                                backgroundColor: Colors.red,
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        }
+                      },
+                    ),
+                  ],
                 ),
-                onTap: () {
-                  // Aquí se puede implementar la edición
-                },
               ),
             );
           },

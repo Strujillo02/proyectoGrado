@@ -12,14 +12,6 @@ class HomeAdmin extends StatelessWidget {
         backgroundColor: const Color.fromRGBO(21, 99, 161, 1),
         automaticallyImplyLeading: true,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_rounded,
-            color: Color.fromARGB(255, 215, 215, 218),
-          ),
-          onPressed: () => context.go('/'),
-          iconSize: 35,
-        ),
       ),
       body: SafeArea(
         child: Align(
