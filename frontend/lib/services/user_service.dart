@@ -37,12 +37,12 @@ class UserService {
   /// Devuelve true si la actualización fue exitosa, false en caso contrario.
   Future<bool> updateUsuario(User est) async {
     try {
-      final uri = Uri.parse('${baseUrl}usuario-update/${est.id}');
+      final uri = Uri.parse('${baseUrl}user/v1/update');
       final headers =
           await ApiHelper.getHeadersWithAuth(); // Incluye Content-Type y Authorization
       final body = jsonEncode(est.toJson()); // Convierte el objeto a JSON
 
-      final response = await http.post(uri, headers: headers, body: body);
+      final response = await http.put(uri, headers: headers, body: body);
 
       return response.statusCode == 200;
     } catch (e) {

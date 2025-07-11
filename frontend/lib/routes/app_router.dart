@@ -1,5 +1,7 @@
+import 'package:frontend/models/user.dart';
 import 'package:frontend/views/auth/login_page.dart';
 import 'package:frontend/views/auth/register_page.dart';
+import 'package:frontend/views/usuarios/editaruser_page.dart';
 import 'package:frontend/views/usuarios/home_admin.dart';
 import 'package:frontend/views/usuarios/user_page.dart';
 import 'package:go_router/go_router.dart';
@@ -31,6 +33,14 @@ final GoRouter appRouter = GoRouter(
       path: '/home/admin',
       name: 'homeAdmin',
       builder: (context, state) => const HomeAdmin(),
+    ),
+    GoRoute(
+      path: '/usuario/editar/:id',
+      builder: (context, state) {
+        //*se captura el id del usuario
+        final id = int.parse(state.pathParameters['id']!);
+        return EditarUsuarioPage(id: id);
+      }
     ),
   ],
 );
