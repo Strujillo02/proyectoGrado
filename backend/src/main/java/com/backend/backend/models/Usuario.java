@@ -61,6 +61,9 @@ public class Usuario  implements UserDetails {
     @Column(name = "tipo_usuario", length = 50)
     String tipo_usuario;
 
+    @Column(name = "direccion", length = 100)
+    String direccion;
+
     @JsonIgnore
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
