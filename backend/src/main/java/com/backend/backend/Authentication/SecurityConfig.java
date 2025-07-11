@@ -28,7 +28,10 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll() // Permite acceso sin autenticación a /auth/
-                        .requestMatchers("/user/v1/delete/**").hasRole("Administrador") // Solo administradores pueden eliminar usuarios
+                        .requestMatchers("/user/v1/delete/**").hasRole("Administrador")// Solo administradores pueden eliminar usuarios
+                        .requestMatchers("/especialidad/v1/create").hasRole("Administrador")
+                        .requestMatchers("/especialidad/v1/delete/**").hasRole("Administrador")
+                        .requestMatchers("/especialidad/v1/update").hasRole("Administrador")
                         .requestMatchers("/user/v1/update").authenticated() // Permite actualizaciones a cualquier usuario autenticado
                         .anyRequest().authenticated()
                 )
