@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/models/user.dart'; 
-import 'package:frontend/services/user_service.dart'; 
-import 'package:go_router/go_router.dart'; 
+import 'package:frontend/models/user.dart';
+import 'package:frontend/services/user_service.dart';
+import 'package:go_router/go_router.dart';
 
 // Pantalla principal para crear y listar usuarios
 class UserManagementPage extends StatefulWidget {
@@ -34,7 +34,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
   String? errorMessage;
 
   // Variable que determina si estamos creando o listando
-  String currentView = 'crear';
+  String currentView = 'listar';
 
   // Cuando inicia la pantalla, se cargan los usuarios
   @override
@@ -89,8 +89,13 @@ class _UserManagementPageState extends State<UserManagementPage> {
         automaticallyImplyLeading: true,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Color.fromARGB(255, 215, 215, 218)),
-          onPressed: () => context.go('/'), // Regresa a la pantalla principal
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: Color.fromARGB(255, 215, 215, 218),
+          ),
+          onPressed:
+              () =>
+                  context.go('/home/admin'), // Regresa a la pantalla principal
           iconSize: 35,
         ),
       ),
@@ -129,11 +134,21 @@ class _UserManagementPageState extends State<UserManagementPage> {
                             });
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color.fromRGBO(21, 99, 161, 1),
+                            backgroundColor: const Color.fromRGBO(
+                              21,
+                              99,
+                              161,
+                              1,
+                            ),
                             padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
-                          child: const Text('Crear Usuario', style: TextStyle(fontSize: 16, color: Colors.white)),
+                          child: const Text(
+                            'Crear Usuario',
+                            style: TextStyle(fontSize: 16, color: Colors.white),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -143,15 +158,27 @@ class _UserManagementPageState extends State<UserManagementPage> {
                           onPressed: () {
                             setState(() {
                               currentView = 'listar';
-                              _futureUsuarios = _userService.getUsuarios(); // Recarga la lista
+                              _futureUsuarios =
+                                  _userService
+                                      .getUsuarios(); // Recarga la lista
                             });
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color.fromRGBO(21, 99, 161, 1),
+                            backgroundColor: const Color.fromRGBO(
+                              21,
+                              99,
+                              161,
+                              1,
+                            ),
                             padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
-                          child: const Text('Listar Usuario', style: TextStyle(fontSize: 16, color: Colors.white)),
+                          child: const Text(
+                            'Listar Usuario',
+                            style: TextStyle(fontSize: 16, color: Colors.white),
+                          ),
                         ),
                       ),
                     ],
@@ -178,7 +205,11 @@ class _UserManagementPageState extends State<UserManagementPage> {
         children: [
           const Text(
             'Formulario de creación de usuario',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color.fromRGBO(21, 99, 161, 1)),
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color.fromRGBO(21, 99, 161, 1),
+            ),
           ),
           const SizedBox(height: 20),
 
@@ -192,7 +223,11 @@ class _UserManagementPageState extends State<UserManagementPage> {
           buildDropdownField(
             label: 'Tipo de documento*',
             value: _selectedDocumentType,
-            items: const ['Cedula de ciudadania', 'Pasaporte', 'Cedula de extranjeria'],
+            items: const [
+              'Cedula de ciudadania',
+              'Pasaporte',
+              'Cedula de extranjeria',
+            ],
             onChanged: (val) => setState(() => _selectedDocumentType = val),
           ),
           const SizedBox(height: 16),
@@ -211,14 +246,22 @@ class _UserManagementPageState extends State<UserManagementPage> {
           buildTextField(contrasenaController, 'Contraseña*', obscure: true),
           const SizedBox(height: 16),
 
-          buildTextField(null, 'Vuelve a escribir la contraseña*', obscure: true, confirm: true),
+          buildTextField(
+            null,
+            'Vuelve a escribir la contraseña*',
+            obscure: true,
+            confirm: true,
+          ),
           const SizedBox(height: 16),
 
           // Muestra mensaje de error si hay uno
           if (errorMessage != null)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Text(errorMessage!, style: const TextStyle(color: Colors.red)),
+              child: Text(
+                errorMessage!,
+                style: const TextStyle(color: Colors.red),
+              ),
             ),
 
           // Botón para crear usuario
@@ -229,11 +272,17 @@ class _UserManagementPageState extends State<UserManagementPage> {
               onPressed: isLoading ? null : register,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color.fromRGBO(21, 99, 161, 1),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
-              child: isLoading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text('Crear cuenta', style: TextStyle(color: Colors.white)),
+              child:
+                  isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                        'Crear cuenta',
+                        style: TextStyle(color: Colors.white),
+                      ),
             ),
           ),
           const SizedBox(height: 20),
@@ -243,17 +292,26 @@ class _UserManagementPageState extends State<UserManagementPage> {
   }
 
   // Construye un campo de texto con validación
-  Widget buildTextField(TextEditingController? controller, String label, {bool obscure = false, bool confirm = false}) {
+  Widget buildTextField(
+    TextEditingController? controller,
+    String label, {
+    bool obscure = false,
+    bool confirm = false,
+  }) {
     return SizedBox(
       width: 300,
       child: TextFormField(
         controller: controller,
         obscureText: obscure,
-        decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+        ),
         validator: (value) {
           if (confirm) {
             if (value == null || value.isEmpty) return 'Confirma tu contraseña';
-            if (value != contrasenaController.text) return 'Las contraseñas no coinciden';
+            if (value != contrasenaController.text)
+              return 'Las contraseñas no coinciden';
           } else if (value == null || value.isEmpty) {
             return 'Campo obligatorio';
           } else if (label.contains('Contraseña') && value.length < 6) {
@@ -275,9 +333,15 @@ class _UserManagementPageState extends State<UserManagementPage> {
     return SizedBox(
       width: 300,
       child: DropdownButtonFormField<String>(
-        decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+        ),
         value: value,
-        items: items.map((item) => DropdownMenuItem(value: item, child: Text(item))).toList(),
+        items:
+            items
+                .map((item) => DropdownMenuItem(value: item, child: Text(item)))
+                .toList(),
         onChanged: onChanged,
         validator: (value) => value == null ? 'Selecciona una opción' : null,
       ),
@@ -311,28 +375,63 @@ class _UserManagementPageState extends State<UserManagementPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Email: ${user.email}'),
-                    Text('Documento: ${user.tipo_identificacion} - ${user.identificacion}'),
+                    Text(
+                      'Documento: ${user.tipo_identificacion} - ${user.identificacion}',
+                    ),
                     Text('Tipo de usuario: ${user.tipo_usuario}'),
                   ],
                 ),
-                // Botón eliminar con confirmación
                 trailing: IconButton(
                   icon: const Icon(Icons.delete, color: Colors.red),
                   onPressed: () async {
                     final confirm = await showDialog<bool>(
                       context: context,
-                      builder: (ctx) => AlertDialog(
-                        title: const Text('¿Eliminar usuario?'),
-                        content: const Text('Esta acción no se puede deshacer.'),
-                        actions: [
-                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-                          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Eliminar')),
-                        ],
-                      ),
+                      builder:
+                          (ctx) => AlertDialog(
+                            title: const Text('¿Eliminar usuario?'),
+                            content: const Text(
+                              '¿Está seguro que desea eliminar?',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: const Text('Cancelar'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, true),
+                                child: const Text('Eliminar'),
+                              ),
+                            ],
+                          ),
                     );
+
                     if (confirm == true) {
-                      await _userService.deleteUsuario(user.id!);
-                      setState(() => _futureUsuarios = _userService.getUsuarios());
+                      final eliminado = await _userService.deleteUsuario(
+                        user.id!,
+                      );
+                      if (eliminado) {
+                        final updatedUsuarios = _userService.getUsuarios();
+                        setState(() {
+                          _futureUsuarios = updatedUsuarios;
+                        });
+
+                        // Muestra SnackBar de éxito
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Usuario eliminado correctamente'),
+                            backgroundColor: Colors.green,
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Error al eliminar el usuario'),
+                            backgroundColor: Colors.red,
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      }
                     }
                   },
                 ),
