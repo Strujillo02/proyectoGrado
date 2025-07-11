@@ -19,8 +19,17 @@ public class UsuarioService {
         return  (ArrayList<Usuario>) usuarioRepository.findAll();
     }
 
-    public Usuario guardarUsuario(Usuario usuario){
-        usuario.setContrasena(passwordEncoder.encode(usuario.getContrasena()));
+    public Usuario guardarUsuario(Usuario usuario) {
+        // Solo encripta si la contraseña no es null ni vacía
+        if (usuario.getContrasena() != null && !usuario.getContrasena().trim().isEmpty()) {
+            usuario.setContrasena(passwordEncoder.encode(usuario.getContrasena()));
+        } else {
+            // Si no se proporciona nueva contraseña, mantener la existente
+            Usuario existingUser = usuarioRepository.findById(usuario.getId())
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            usuario.setContrasena(existingUser.getContrasena());
+        }
+
         return usuarioRepository.save(usuario);
     }
 
@@ -28,10 +37,8 @@ public class UsuarioService {
         usuarioRepository.deleteById(id);
     }
 
-    public Usuario actualizarUsuario(Usuario usuario) {
-        return usuarioRepository.save(usuario);
-    }
 
-    //public Optional<Usuario> obtener
+
+
 
 }

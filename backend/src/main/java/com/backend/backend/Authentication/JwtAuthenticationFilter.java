@@ -1,5 +1,6 @@
 package com.backend.backend.Authentication;
 
+import lombok.extern.slf4j.Slf4j;
 import io.jsonwebtoken.Jwts;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -17,6 +18,7 @@ import java.io.IOException;
 
 
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -27,12 +29,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         final String token = getTokenFromRequest(request);
-
         if (token == null) {
+            log.info("Token no encontrado en la solicitud.");
             filterChain.doFilter(request, response);
             return;
         }
-
         try {
             Jwts.parserBuilder()
                     .setSigningKey(jwtService.getKey())
@@ -41,15 +42,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             UsernamePasswordAuthenticationToken authentication = getAuthentication(token);
             SecurityContextHolder.getContext().setAuthentication(authentication);
+            log.info("Token validado exitosamente. Usuario autenticado: {}", authentication.getName());
         } catch (Exception e) {
-            System.out.println("Error al verificar el token: " + e.getMessage());
+            log.error("Error al verificar el token: {}", e.getMessage());
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token inválido");
             return;
         }
-
         filterChain.doFilter(request, response);
     }
-
     private UsernamePasswordAuthenticationToken getAuthentication(String token) {
         String username = jwtService.getUsernameFromToken(token);
         UserDetails userDetails = userDetailsService.loadUserByUsername(username);

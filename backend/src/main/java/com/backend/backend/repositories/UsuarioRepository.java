@@ -8,5 +8,7 @@ import java.util.Optional;
 
 public interface UsuarioRepository extends CrudRepository<Usuario, Integer> {
     public abstract Usuario findByIdentificacion(String identificacion);
+    //metodo para actualizar
+
 
 }

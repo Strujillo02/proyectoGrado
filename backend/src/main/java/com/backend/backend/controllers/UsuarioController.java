@@ -7,13 +7,16 @@ import com.backend.backend.services.UsuarioService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/user/v1")
 @RequiredArgsConstructor
+@Slf4j
 public class UsuarioController {
 
     @Autowired
@@ -41,5 +44,11 @@ public class UsuarioController {
     public String eliminarUsuario(@PathVariable int id){
         usuarioService.eliminarUsuario(id);
         return "Usuario eliminado correctamente";
+    }
+
+    @PutMapping("/update")
+    public Usuario actualizarUsuario(@RequestBody Usuario usuario) {
+        log.info("Actualizando usuario con ID: {}", usuario.getId());
+        return usuarioService.guardarUsuario(usuario);
     }
 }
