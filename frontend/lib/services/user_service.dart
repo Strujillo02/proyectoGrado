@@ -7,46 +7,42 @@ import 'package:http/http.dart' as http;
 class UserService {
   //! se inicializa dotenv para cargar las variables de entorno
   final String baseUrl = dotenv.env['URL_API']!;
- // final String baseUrlImg = dotenv.env['URL_API_IMG']!;
+  // final String baseUrlImg = dotenv.env['URL_API_IMG']!;
 
   //! getUsuarios
   /// Obtiene una lista de usuarios desde la API.
   Future<List<User>> getUsuarios() async {
-    final headers = await ApiHelper.getHeadersWithAuth(); // Obtiene los headers con el token
+    final headers = await ApiHelper.getHeadersWithAuth();
 
     final response = await http.get(
       Uri.parse('${baseUrl}user/v1/get'),
-      headers: headers, // Se incluye el token aquí
+      headers: headers,
     );
 
     if (response.statusCode == 200) {
-      /// Decodifica la respuesta JSON
-      /// y convierte cada elemento en un objeto usuarios.
-      /// el cual viene [data] de la API
-      final data = jsonDecode(response.body)['data'];
-      return List<User>.from(
-        data.map((item) => User.fromJson(item)),
-      );
+      final List<dynamic> data = jsonDecode(
+        response.body,
+      ); // Es directamente una lista
+      return data.map((item) => User.fromJson(item)).toList();
     } else {
-      throw Exception('Error al cargar usuarios');
+      throw Exception(
+        'Error al cargar usuarios. Código: ${response.statusCode}',
+      );
     }
   }
 
   //! updateUsuario
   /// Actualiza un usuario en la API.
-  /// Recibe un objeto usuario 
+  /// Recibe un objeto usuario
   /// Devuelve true si la actualización fue exitosa, false en caso contrario.
   Future<bool> updateUsuario(User est) async {
     try {
       final uri = Uri.parse('${baseUrl}usuario-update/${est.id}');
-      final headers = await ApiHelper.getHeadersWithAuth(); // Incluye Content-Type y Authorization
+      final headers =
+          await ApiHelper.getHeadersWithAuth(); // Incluye Content-Type y Authorization
       final body = jsonEncode(est.toJson()); // Convierte el objeto a JSON
 
-      final response = await http.post(
-        uri,
-        headers: headers,
-        body: body,
-      );
+      final response = await http.post(uri, headers: headers, body: body);
 
       return response.statusCode == 200;
     } catch (e) {
@@ -61,16 +57,13 @@ class UserService {
   Future<bool> createUsuario(User est) async {
     try {
       final uri = Uri.parse('${baseUrl}user/v1/create');
-      final headers = await ApiHelper.getHeadersWithAuth(); // Incluye Content-Type y Authorization
+      final headers =
+          await ApiHelper.getHeadersWithAuth(); // Incluye Content-Type y Authorization
       final body = jsonEncode(est.toJson()); // Convierte el objeto a JSON
 
-      final response = await http.post(
-        uri,
-        headers: headers,
-        body: body,
-      );
+      final response = await http.post(uri, headers: headers, body: body);
 
-      return response.statusCode == 201;
+      return response.statusCode == 200;
     } catch (e) {
       throw Exception('Error al crear usuario: $e');
     }
@@ -82,17 +75,19 @@ class UserService {
   /// Retorna true si fue exitoso.
   Future<bool> deleteUsuario(int id) async {
     try {
-      final headers = await ApiHelper.getHeadersWithAuth(); // Incluye token
+      final headers = await ApiHelper.getHeadersWithAuth();
       final response = await http.delete(
         Uri.parse('${baseUrl}user/v1/delete/$id'),
-        headers: headers, // Autorización
+        headers: headers,
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['success'] == true;
+        // Simplemente verifica el status
+        return true;
       } else {
-        throw Exception('Error al eliminar el usuario');
+        // Opcional: imprimir body si no fue exitoso
+        print('Error al eliminar: ${response.body}');
+        return false;
       }
     } catch (e) {
       throw Exception('Error al eliminar usuario: $e');

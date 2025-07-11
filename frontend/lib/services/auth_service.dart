@@ -34,19 +34,25 @@ class AuthService {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', data['token']);
         await prefs.setString('user', jsonEncode(data['user']));
-     //   print(jsonEncode(data['user']));
+        //   print(jsonEncode(data['user']));
       } catch (e) {
         debugPrint('Error al guardar token en SharedPreferences: $e');
       }
 
       return {'success': true, 'user': User.fromJson(data['user'])};
     } else {
-      //* si el servidor devuelve un error, se convierte el objeto a JSON
-      //* y se devuelve el mensaje de error
-
-      final data = jsonDecode(response.body);
-     // print(jsonEncode(data['user']));
-      return {'success': false, 'message': data['message'] ?? 'Error en login'};
+      if (response.statusCode == 403) {
+        return {'success': false, 'message': 'Credenciales incorrectas'};
+      } else {
+        //* si el servidor devuelve un error, se convierte el objeto a JSON
+        //* y se devuelve el mensaje de error
+        final data = jsonDecode(response.body);
+        // print(jsonEncode(data['user']));
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Error en login',
+        };
+      }
     }
   }
 
