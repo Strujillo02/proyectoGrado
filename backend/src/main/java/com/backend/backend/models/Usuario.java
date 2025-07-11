@@ -2,6 +2,7 @@ package com.backend.backend.models;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -52,6 +53,11 @@ public class Usuario  implements UserDetails {
     @JsonIgnore // Esto evitará que se serialize la contraseña
     String contrasena;
 
+    @JsonProperty("contrasena")
+    public void parseContrasena(String contrasena) {
+        this.contrasena = contrasena;
+    }
+
     @Column(name = "tipo_usuario", length = 50)
     String tipo_usuario;
 
@@ -60,7 +66,7 @@ public class Usuario  implements UserDetails {
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + tipo_usuario));
     }
-    @JsonIgnore
+
     @Override
     public String getPassword() {
         return this.contrasena;
