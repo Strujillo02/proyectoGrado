@@ -14,7 +14,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 
 
-@EnableMethodSecurity
+//@EnableMethodSecurity
+@EnableMethodSecurity(prePostEnabled = true)
+
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
