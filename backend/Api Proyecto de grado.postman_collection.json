@@ -17,7 +17,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiJ9.eyJhdXRob3JpdGllcyI6WyJST0xFX0FkbWluaXN0cmFkb3IiXSwic3ViIjoiMTIzNDU2NzgiLCJpYXQiOjE3NTIxODI3NzUsImV4cCI6MTc1MjE4NDIxNX0.oNBodATm1moynVaq9-VDyAUMacypYKiHu1qdF0L3i_M",
+									"value": "eyJhbGciOiJIUzI1NiJ9.eyJhdXRob3JpdGllcyI6WyJST0xFX0FkbWluaXN0cmFkb3IiXSwic3ViIjoiMTIzNDU2NzgiLCJpYXQiOjE3NTIyNDgwNDEsImV4cCI6MTc1MjI0OTQ4MX0.1_ImWJOafkuMugmy7BKsFFLqff8eTdhhVJlgDCYywqs",
 									"type": "string"
 								}
 							]
@@ -26,7 +26,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"nombre\": \"calero\",\r\n    \"telefono\": \"311111111\",\r\n    \"email\": \"100775@gmail.com\",\r\n    \"identificacion\": \"10077511\",\r\n    \"tipo_identificacion\": \"cedula\",\r\n    \"contrasena\": \"100775\",\r\n    \"tipo_usuario\": \"Paciente\"\r\n}",
+							"raw": "{\r\n    \"nombre\": \"calero\",\r\n    \"telefono\": \"777777\",\r\n    \"email\": \"100775@gmail.com\",\r\n    \"identificacion\": \"10077511\",\r\n    \"tipo_identificacion\": \"cedula\",\r\n    \"contrasena\": \"100775\",\r\n    \"tipo_usuario\": \"Paciente\",\r\n    \"direccion\": \"mestizal\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -98,7 +98,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiJ9.eyJhdXRob3JpdGllcyI6WyJST0xFX1BhY2llbnRlIl0sInN1YiI6IjExMSIsImlhdCI6MTc1MjE4MjU2MiwiZXhwIjoxNzUyMTg0MDAyfQ.OCKu3qTZce2Ls3mbt-KCi_VT_Jem2VHXaS6f83Rxhcg",
+									"value": "eyJhbGciOiJIUzI1NiJ9.eyJhdXRob3JpdGllcyI6WyJST0xFX0FkbWluaXN0cmFkb3IiXSwic3ViIjoiMTIzNDU2NzgiLCJpYXQiOjE3NTIyNDQzNDcsImV4cCI6MTc1MjI0NTc4N30.ihW6OtIirugNjs6E0rLMXLROqejy4seDyYNbb6lWSHk",
 									"type": "string"
 								}
 							]
@@ -116,6 +116,46 @@
 								"user",
 								"v1",
 								"get"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "editar",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiJ9.eyJhdXRob3JpdGllcyI6WyJST0xFX0FkbWluaXN0cmFkb3IiXSwic3ViIjoiMTIzNDU2NzgiLCJpYXQiOjE3NTIyNjEzNjEsImV4cCI6MTc1MjI2MjgwMX0.45v2p9SA1rJ_fsH9p_R0LuUdQU0ZnGtwXIg3yVA5XJM",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": 67,\r\n  \"nombre\": \"Paciente vazquez\",\r\n  \"email\": \"admin@example.com\",\r\n  \"identificacion\": \"123\",\r\n  \"tipo_identificacion\": \"CC\",\r\n  \"contrasena\": \"1223333\",\r\n  \"tipo_usuario\": \"Paciente\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/user/v1/update",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"user",
+								"v1",
+								"update"
 							]
 						}
 					},
@@ -165,7 +205,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"nombre\": \"Admin User\",\r\n  \"email\": \"admin@example.com\",\r\n  \"identificacion\": \"12345678\",\r\n  \"tipo_identificacion\": \"CC\",\r\n  \"contrasena\": \"12345678\",\r\n  \"tipo_usuario\": \"Administrador\"\r\n}",
+							"raw": "{\r\n  \"nombre\": \"Paciente\",\r\n  \"email\": \"admin@example.com\",\r\n  \"identificacion\": \"123\",\r\n  \"tipo_identificacion\": \"CC\",\r\n  \"contrasena\": \"123\",\r\n  \"tipo_usuario\": \"Paciente\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -182,6 +222,165 @@
 							"path": [
 								"auth",
 								"register"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "especialidad",
+			"item": [
+				{
+					"name": "listar",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiJ9.eyJhdXRob3JpdGllcyI6WyJST0xFX0FkbWluaXN0cmFkb3IiXSwic3ViIjoiMTIzNDU2NzgiLCJpYXQiOjE3NTIzNDM0NjksImV4cCI6MTc1MjM0NDkwOX0.VZX_3qMHS95Qo-DjuViWgFZ7wu7utHt2DhgxxMplIj8",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"identificacion\": \"12345678\",\r\n  \"contrasena\": \"12345678\"\r\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/especialidad/v1/get",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"especialidad",
+								"v1",
+								"get"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "crear",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiJ9.eyJhdXRob3JpdGllcyI6WyJST0xFX0FkbWluaXN0cmFkb3IiXSwic3ViIjoiMTIzNDU2NzgiLCJpYXQiOjE3NTIzNDM0NjksImV4cCI6MTc1MjM0NDkwOX0.VZX_3qMHS95Qo-DjuViWgFZ7wu7utHt2DhgxxMplIj8",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"nombre\": \"fififisioterapia\",\r\n    \"estado\": \"inactivo\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/especialidad/v1/create",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"especialidad",
+								"v1",
+								"create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "delete",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiJ9.eyJhdXRob3JpdGllcyI6WyJST0xFX0FkbWluaXN0cmFkb3IiXSwic3ViIjoiMTIzNDU2NzgiLCJpYXQiOjE3NTIzNDM0NjksImV4cCI6MTc1MjM0NDkwOX0.VZX_3qMHS95Qo-DjuViWgFZ7wu7utHt2DhgxxMplIj8",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"nombre\": \"fififisioterapia\",\r\n    \"estado\": \"inactivo\"\r\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/especialidad/v1/delete/14",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"especialidad",
+								"v1",
+								"delete",
+								"14"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "editar",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiJ9.eyJhdXRob3JpdGllcyI6WyJST0xFX0FkbWluaXN0cmFkb3IiXSwic3ViIjoiMTIzNDU2NzgiLCJpYXQiOjE3NTIzNDc0NTYsImV4cCI6MTc1MjM0ODg5Nn0.k9RMLgPzk8iwKQgVaQJ-Zlwo0MF12xNPgDq6jwBvOzA",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\": 18,\r\n    \"nombre\": \"sisisisiioterapia\",\r\n    \"estado\": \"inactivo\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/especialidad/v1/update",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"especialidad",
+								"v1",
+								"update"
 							]
 						}
 					},
