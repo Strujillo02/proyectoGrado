@@ -1,21 +1,20 @@
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend/api_helper.dart'; 
-import 'package:frontend/models/user.dart';
+import 'package:frontend/models/especialidades.dart';
 import 'package:http/http.dart' as http;
 
-class UserService {
+class EspecialidadesService {
   //! se inicializa dotenv para cargar las variables de entorno
   final String baseUrl = dotenv.env['URL_API']!;
-  // final String baseUrlImg = dotenv.env['URL_API_IMG']!;
 
-  //! getUsuarios
-  /// Obtiene una lista de usuarios desde la API.
-  Future<List<User>> getUsuarios() async {
+  //! getEspecialidades
+  /// Obtiene una lista de especialidades desde la API.
+  Future<List<Especialidades>> getEspecialidades() async {
     final headers = await ApiHelper.getHeadersWithAuth();
 
     final response = await http.get(
-      Uri.parse('${baseUrl}user/v1/get'),
+      Uri.parse('${baseUrl}especialidad/v1/get'),
       headers: headers,
     );
 
@@ -23,21 +22,21 @@ class UserService {
       final List<dynamic> data = jsonDecode(
         response.body,
       ); // Es directamente una lista
-      return data.map((item) => User.fromJson(item)).toList();
+      return data.map((item) => Especialidades.fromJson(item)).toList();
     } else {
       throw Exception(
-        'Error al cargar usuarios. Código: ${response.statusCode}',
+        'Error al cargar Especialidades. Código: ${response.statusCode}',
       );
     }
   }
 
-  //! updateUsuario
-  /// Actualiza un usuario en la API.
-  /// Recibe un objeto usuario
+  //! updateEspecialidades
+  /// Actualiza una especialidad en la API.
+  /// Recibe un objeto especialidades
   /// Devuelve true si la actualización fue exitosa, false en caso contrario.
-  Future<bool> updateUsuario(User est) async {
+  Future<bool> updateEspecialidades(Especialidades est) async {
     try {
-      final uri = Uri.parse('${baseUrl}user/v1/update');
+      final uri = Uri.parse('${baseUrl}especialidad/v1/update');
       final headers =
           await ApiHelper.getHeadersWithAuth(); // Incluye Content-Type y Authorization
       final body = jsonEncode(est.toJson()); // Convierte el objeto a JSON
@@ -46,17 +45,17 @@ class UserService {
 
       return response.statusCode == 200;
     } catch (e) {
-      throw Exception('Error al actualizar usuarios: $e');
+      throw Exception('Error al actualizar especialidades: $e');
     }
   }
 
-  //! createUsuario
-  /// Crea un nuevo usuario en la API.
-  /// Recibe un objeto usuario
+  //! createEspecialidades
+  /// Crea un nuevo especialidad en la API.
+  /// Recibe un objeto especialidades
   /// Devuelve true si la creación fue exitosa, false en caso contrario.
-  Future<bool> createUsuario(User est) async {
+  Future<bool> createEspecialidades(Especialidades est) async {
     try {
-      final uri = Uri.parse('${baseUrl}user/v1/create');
+      final uri = Uri.parse('${baseUrl}especialidad/v1/create');
       final headers =
           await ApiHelper.getHeadersWithAuth(); // Incluye Content-Type y Authorization
       final body = jsonEncode(est.toJson()); // Convierte el objeto a JSON
@@ -65,19 +64,19 @@ class UserService {
 
       return response.statusCode == 200;
     } catch (e) {
-      throw Exception('Error al crear usuario: $e');
+      throw Exception('Error al crear especialidad: $e');
     }
   }
 
-  //! deleteUsuario
-  /// Elimina un usuario de la API.
-  /// Realiza un borrado lógico de un usuario por ID.
+  //! deleteEspecialidad
+  /// Elimina un especialidad de la API.
+  /// Realiza un borrado lógico de una especialidad por ID.
   /// Retorna true si fue exitoso.
-  Future<bool> deleteUsuario(int id) async {
+  Future<bool> deleteEspecialidad(int id) async {
     try {
       final headers = await ApiHelper.getHeadersWithAuth();
       final response = await http.delete(
-        Uri.parse('${baseUrl}user/v1/delete/$id'),
+        Uri.parse('${baseUrl}especialidad/v1/delete/$id'),
         headers: headers,
       );
 
@@ -90,7 +89,7 @@ class UserService {
         return false;
       }
     } catch (e) {
-      throw Exception('Error al eliminar usuario: $e');
+      throw Exception('Error al eliminar especialidad: $e');
     }
   }
 }
