@@ -1,6 +1,9 @@
+import 'package:frontend/models/especialidades.dart';
 import 'package:frontend/models/user.dart';
 import 'package:frontend/views/auth/login_page.dart';
 import 'package:frontend/views/auth/register_page.dart';
+import 'package:frontend/views/especialidades/editarespecialidades_page.dart';
+import 'package:frontend/views/especialidades/especialidades_page.dart';
 import 'package:frontend/views/usuarios/editaruser_page.dart';
 import 'package:frontend/views/usuarios/home_admin.dart';
 import 'package:frontend/views/usuarios/user_page.dart';
@@ -23,12 +26,11 @@ final GoRouter appRouter = GoRouter(
       name: 'gestinarUsuarios',
       builder: (context, state) => const UserManagementPage(),
     ),
-    /*
     GoRoute(
       path: '/gestionar/especialidades',
       name: 'gestinarEspecialidades',
-      builder: (context, state) => const HomeAdmin(),
-    ),*/
+      builder: (context, state) => const EspecialidadesManagementPage(),
+    ),
     GoRoute(
       path: '/home/admin',
       name: 'homeAdmin',
@@ -42,5 +44,13 @@ final GoRouter appRouter = GoRouter(
         return EditarUsuarioPage(id: id);
       }
     ),
-  ],
+    GoRoute(
+      path: '/especialidades/editar/:id',
+      builder: (context, state) { 
+        //*se captura el id de la especialidad
+        final id = int.parse(state.pathParameters['id']!);
+        return EditarEspecialidadesPage(id: id);
+      }
+      ),
+    ],
 );
