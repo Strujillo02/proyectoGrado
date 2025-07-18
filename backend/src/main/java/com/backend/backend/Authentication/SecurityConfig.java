@@ -34,6 +34,9 @@ public class SecurityConfig {
                         .requestMatchers("/especialidad/v1/create").hasRole("Administrador")
                         .requestMatchers("/especialidad/v1/delete/**").hasRole("Administrador")
                         .requestMatchers("/especialidad/v1/update").hasRole("Administrador")
+                        .requestMatchers("/medico/v1/update").hasAnyRole("Administrador")
+                        .requestMatchers("/medico/v1/delete/").hasAnyRole("Administrador")
+                        .requestMatchers("/medico/v1/create").hasAnyRole("Administrador")
                         .requestMatchers("/user/v1/update").authenticated() // Permite actualizaciones a cualquier usuario autenticado
                         .anyRequest().authenticated()
                 )

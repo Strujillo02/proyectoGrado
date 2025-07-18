@@ -13,4 +13,5 @@ public interface UsuarioRepository extends CrudRepository<Usuario, Integer> {
     //metodo para actualizar
 
 
+
 }

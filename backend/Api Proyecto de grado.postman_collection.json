@@ -98,7 +98,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiJ9.eyJhdXRob3JpdGllcyI6WyJST0xFX0FkbWluaXN0cmFkb3IiXSwic3ViIjoiMTIzNDU2NzgiLCJpYXQiOjE3NTIyNDQzNDcsImV4cCI6MTc1MjI0NTc4N30.ihW6OtIirugNjs6E0rLMXLROqejy4seDyYNbb6lWSHk",
+									"value": "eyJhbGciOiJIUzI1NiJ9.eyJhdXRob3JpdGllcyI6WyJST0xFX0FkbWluaXN0cmFkb3IiXSwic3ViIjoiMTIzNDU2NzgiLCJpYXQiOjE3NTIyNjQ4NzgsImV4cCI6MTc1MjI2NjMxOH0.2Lh0O1N1dk4F-TbC1dTUSKGmmSubayS8LByX9seTXTQ",
 									"type": "string"
 								}
 							]
@@ -381,6 +381,242 @@
 								"especialidad",
 								"v1",
 								"update"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Medico",
+			"item": [
+				{
+					"name": "obtener usuario por identificacion",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiJ9.eyJhdXRob3JpdGllcyI6WyJST0xFX0FkbWluaXN0cmFkb3IiXSwic3ViIjoiMTIzNDU2NzgiLCJpYXQiOjE3NTI4NjM0ODIsImV4cCI6MTc1Mjg2NDkyMn0.sYRyT-kLT1Bhd2Qpn1dZdK52T2j2j-z9W-EMQnEjDh0",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": 67,\r\n  \"nombre\": \"Paciente vazquez\",\r\n  \"email\": \"admin@example.com\",\r\n  \"identificacion\": \"123\",\r\n  \"tipo_identificacion\": \"CC\",\r\n  \"contrasena\": \"1223333\",\r\n  \"tipo_usuario\": \"Paciente\"\r\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/user/v1/getIdentificacion/100775",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"user",
+								"v1",
+								"getIdentificacion",
+								"100775"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "consultar todas especialidades",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiJ9.eyJhdXRob3JpdGllcyI6WyJST0xFX0FkbWluaXN0cmFkb3IiXSwic3ViIjoiMTIzNDU2NzgiLCJpYXQiOjE3NTI4NjM0ODIsImV4cCI6MTc1Mjg2NDkyMn0.sYRyT-kLT1Bhd2Qpn1dZdK52T2j2j-z9W-EMQnEjDh0",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": 67,\r\n  \"nombre\": \"Paciente vazquez\",\r\n  \"email\": \"admin@example.com\",\r\n  \"identificacion\": \"123\",\r\n  \"tipo_identificacion\": \"CC\",\r\n  \"contrasena\": \"1223333\",\r\n  \"tipo_usuario\": \"Paciente\"\r\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/especialidad/v1/get",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"especialidad",
+								"v1",
+								"get"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "listar medicos",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiJ9.eyJhdXRob3JpdGllcyI6WyJST0xFX0FkbWluaXN0cmFkb3IiXSwic3ViIjoiMTIzNDU2NzgiLCJpYXQiOjE3NTI4NjM0ODIsImV4cCI6MTc1Mjg2NDkyMn0.sYRyT-kLT1Bhd2Qpn1dZdK52T2j2j-z9W-EMQnEjDh0",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"identificacion\": \"12345678\",\r\n  \"contrasena\": \"12345678\"\r\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/medico/v1/get",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"medico",
+								"v1",
+								"get"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "crear medico",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiJ9.eyJhdXRob3JpdGllcyI6WyJST0xFX0FkbWluaXN0cmFkb3IiXSwic3ViIjoiMTIzNDU2NzgiLCJpYXQiOjE3NTI4NjM3ODAsImV4cCI6MTc1Mjg2NTIyMH0.uMS3QwDDd6wtOUwk6dJN0uLEAfB3cft3IMLVl22f2W4",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n        \"especialidad\": {\r\n            \"id\": 21\r\n        },\r\n        \"usuario\": {\r\n            \"id\": 62\r\n        },\r\n        \"estado\": \"activo\",\r\n        \"tarjetaProfe\": \"121212\"\r\n    }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/medico/v1/create",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"medico",
+								"v1",
+								"create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "editar medico",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiJ9.eyJhdXRob3JpdGllcyI6WyJST0xFX0FkbWluaXN0cmFkb3IiXSwic3ViIjoiMTIzNDU2NzgiLCJpYXQiOjE3NTI4NjM3ODAsImV4cCI6MTc1Mjg2NTIyMH0.uMS3QwDDd6wtOUwk6dJN0uLEAfB3cft3IMLVl22f2W4",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n        \"id\": 28,\r\n        \"especialidad\": {\r\n            \"id\": 22\r\n        },\r\n        \"usuario\": {\r\n            \"id\": 62\r\n        },\r\n        \"estado\": \"inactivo\",\r\n        \"tarjetaProfe\": \"121212\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/medico/v1/update",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"medico",
+								"v1",
+								"update"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "eliminar medico",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiJ9.eyJhdXRob3JpdGllcyI6WyJST0xFX0FkbWluaXN0cmFkb3IiXSwic3ViIjoiMTIzNDU2NzgiLCJpYXQiOjE3NTI4NjM3ODAsImV4cCI6MTc1Mjg2NTIyMH0.uMS3QwDDd6wtOUwk6dJN0uLEAfB3cft3IMLVl22f2W4",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n        \"id\": 28,\r\n        \"especialidad\": {\r\n            \"id\": 22\r\n        },\r\n        \"usuario\": {\r\n            \"id\": 62\r\n        },\r\n        \"estado\": \"inactivo\",\r\n        \"tarjetaProfe\": \"121212\"\r\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/medico/v1/delete/28",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"medico",
+								"v1",
+								"delete",
+								"28"
 							]
 						}
 					},

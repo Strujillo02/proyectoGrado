@@ -38,8 +38,8 @@ public class UsuarioService {
         usuarioRepository.deleteById(id);
     }
 
-
-
-
+    public Usuario consultarIdentificacion(String id) {
+        return usuarioRepository.findByIdentificacion(id);
+    }
 
 }
