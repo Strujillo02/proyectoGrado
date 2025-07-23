@@ -4,6 +4,7 @@ import 'package:frontend/views/auth/login_page.dart';
 import 'package:frontend/views/auth/register_page.dart';
 import 'package:frontend/views/especialidades/editarespecialidades_page.dart';
 import 'package:frontend/views/especialidades/especialidades_page.dart';
+import 'package:frontend/views/medicos/editarmedico_page.dart';
 import 'package:frontend/views/usuarios/editaruser_page.dart';
 import 'package:frontend/views/usuarios/home_admin.dart';
 import 'package:frontend/views/usuarios/user_page.dart';
@@ -42,6 +43,14 @@ final GoRouter appRouter = GoRouter(
         //*se captura el id del usuario
         final id = int.parse(state.pathParameters['id']!);
         return EditarUsuarioPage(id: id);
+      }
+    ),
+    GoRoute(
+      path: '/medico/editar/:id',
+      builder: (context, state) {
+        //*se captura el id del medico
+        final id = int.parse(state.pathParameters['id']!);
+        return EditarMedicoPage(id: id);
       }
     ),
     GoRoute(
