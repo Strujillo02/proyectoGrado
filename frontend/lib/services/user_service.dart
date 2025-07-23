@@ -93,4 +93,24 @@ class UserService {
       throw Exception('Error al eliminar usuario: $e');
     }
   }
+  
+  //! getUsuarioByIdentificacion
+  /// Busca un usuario por su número de identificación.
+  Future<User?> getUsuarioByIdentificacion(String identificacion) async {
+  final headers = await ApiHelper.getHeadersWithAuth();
+  final response = await http.get(
+    Uri.parse('${baseUrl}user/v1/getIdentificacion/$identificacion'),
+    headers: headers,
+  );
+  
+  if (response.statusCode == 200) {
+    final json = jsonDecode(response.body);
+    return User.fromJson(json);
+  } else if (response.statusCode == 404) {
+    return null; // No encontrado
+  } else {
+    throw Exception('Error al buscar usuario: ${response.statusCode}');
+  }
+}
+
 }
