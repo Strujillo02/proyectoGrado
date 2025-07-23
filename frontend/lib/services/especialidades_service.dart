@@ -30,6 +30,19 @@ class EspecialidadesService {
     }
   }
 
+
+  //Método para verificar si una especialidad existe por nombre
+  Future<bool> existeEspecialidadConNombre(String nombre) async {
+  try {
+    final especialidades = await getEspecialidades();
+
+    return especialidades.any((e) =>
+      e.nombre.toLowerCase().trim() == nombre.toLowerCase().trim());
+  } catch (e) {
+    throw Exception('Error al verificar existencia de especialidad: $e');
+  }
+}
+
   //! updateEspecialidades
   /// Actualiza una especialidad en la API.
   /// Recibe un objeto especialidades
