@@ -50,6 +50,22 @@ class _EspecialidadesManagementPageState
       isLoading = true;
       errorMessage = null;
     });
+    // Verifica si la especialidad ya existe
+    final existe = await _especialidadesService.existeEspecialidadConNombre(
+      _selectedNombreTipo!,
+    );
+    if (existe) {
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('La especialidad ya existe con ese nombre'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     // Crea un objeto especialidad con los datos del formulario
     final newEspecialidades = Especialidades(
