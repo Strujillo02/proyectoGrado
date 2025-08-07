@@ -6,37 +6,34 @@ class Medico {
   final Especialidades especialidad;
   final User usuario;
   final String estado;
-  final String tarjetaProfe; 
+  final String tarjetaProfe;
 
   Medico({
     this.id,
     required this.especialidad,
     required this.usuario,
     required this.estado,
-    required this.tarjetaProfe, 
+    required this.tarjetaProfe,
   });
 
   // Convierte un objeto JSON a un objeto Medico
-  factory Medico.fromJson(Map<String, dynamic> json) {
-  return Medico(
-    id: json['id'] is int
-        ? json['id']
-        : int.tryParse(json['id'].toString()), // <-- asegura que sea int
+  factory Medico.fromJson(Map<String, dynamic> json) => Medico(
+    id:
+        json['id'] is int
+            ? json['id']
+            : int.tryParse(json['id'].toString()), // <-- asegura que sea int
     especialidad: Especialidades.fromJson(json['especialidad']),
     usuario: User.fromJson(json['usuario']),
     estado: json['estado'],
     tarjetaProfe: json['tarjetaProfe'] ?? json['tarjeta_profe'] ?? '',
   );
-}
 
   // Convierte un objeto Medico a un objeto JSON
-  Map<String, dynamic> toJson() {
-    return {
-      if (id != null) 'id': id,
-      'especialidad': especialidad.toJson(),
-      'usuario': usuario.toJson(),
-      'estado': estado,
-      'tarjetaProfe': tarjetaProfe, 
-    };
-  }
+  Map<String, dynamic> toJson() => {
+    if (id != null) 'id': id,
+    'especialidad': especialidad.toJson(),
+    'usuario': usuario.toJson(),
+    'estado': estado,
+    'tarjetaProfe': tarjetaProfe,
+  };
 }

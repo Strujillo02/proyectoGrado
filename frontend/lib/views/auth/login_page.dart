@@ -42,7 +42,7 @@ class _LoginPageState extends State<LoginPage> {
       if (tipoUsuario == 'Administrador') {
         context.go('/home/admin');
       } else if (tipoUsuario == 'Paciente') {
-        context.go('/register');
+        context.go('/home/paciente');
       } else if (tipoUsuario == 'Medico') {
         context.go('/register');
       } else {

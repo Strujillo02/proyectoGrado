@@ -5,6 +5,8 @@ import 'package:frontend/views/auth/register_page.dart';
 import 'package:frontend/views/especialidades/editarespecialidades_page.dart';
 import 'package:frontend/views/especialidades/especialidades_page.dart';
 import 'package:frontend/views/medicos/editarmedico_page.dart';
+import 'package:frontend/views/pacientes/home_paciente.dart';
+import 'package:frontend/views/pacientes/solicitar_cita.dart';
 import 'package:frontend/views/usuarios/editaruser_page.dart';
 import 'package:frontend/views/usuarios/home_admin.dart';
 import 'package:frontend/views/usuarios/user_page.dart';
@@ -61,5 +63,15 @@ final GoRouter appRouter = GoRouter(
         return EditarEspecialidadesPage(id: id);
       }
       ),
+       GoRoute(
+      path: '/home/paciente',
+      name: 'homePaciente',
+      builder: (context, state) => const HomePaciente(),
+    ),
+      GoRoute(
+      path: '/solicitar/cita',
+      name: 'solicitarCita',
+      builder: (context, state) => const PedircitaPage(),
+    ),
     ],
 );
