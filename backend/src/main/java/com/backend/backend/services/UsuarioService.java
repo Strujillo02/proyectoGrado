@@ -42,4 +42,8 @@ public class UsuarioService {
         return usuarioRepository.findByIdentificacion(id);
     }
 
+    public Usuario obtenerUsuarioPorEmail(String email) {
+        return usuarioRepository.findByEmail(email);
+    }
+
 }
