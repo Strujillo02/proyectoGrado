@@ -12,6 +12,8 @@ class User {
   final String? contrasena;
   final String tipo_usuario;
   final String? direccion;
+  final String token_dispositivo;
+
 
   User({
     this.id,
@@ -25,7 +27,9 @@ class User {
     required this.tipo_identificacion,
     this.contrasena,
     required this.tipo_usuario,
-    this.direccion ,
+    this.direccion,
+    this.token_dispositivo = '',
+
   });
 
   // Método para convertir un mapa a un objeto User
@@ -41,6 +45,7 @@ class User {
     contrasena: json['contrasena'],
     tipo_usuario: json['tipo_usuario'],
     direccion: json['direccion'],
+    token_dispositivo: json['token_dispositivo'] ?? '',
   );
 
   // Método para convertir un objeto User a un mapa
@@ -57,5 +62,6 @@ class User {
     'contrasena': contrasena,
     'tipo_usuario': tipo_usuario,
     'direccion': direccion,
+    'token_dispositivo': token_dispositivo,
   };
 }
