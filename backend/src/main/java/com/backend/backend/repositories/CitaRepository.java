@@ -1,9 +1,9 @@
 package com.backend.backend.repositories;
 
-import com.backend.backend.models.Especialidad;
+import com.backend.backend.models.Cita;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface EspecialidadRepository extends CrudRepository<Especialidad, Integer> {
+public interface CitaRepository extends CrudRepository<Cita, Integer> {
 }
