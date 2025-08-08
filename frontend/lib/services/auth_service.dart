@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend/api_helper.dart';
 import 'package:frontend/models/user.dart';
+import 'package:frontend/services/user_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -12,53 +13,95 @@ class AuthService {
 
   //! login se encarga de autenticar al usuario
   Future<Map<String, dynamic>> login(
-    String identificacion,
-    String contrasena,
-  ) async {
-    final response = await http.post(
-      Uri.parse('${baseUrl}auth/login'),
-      //* especifica el tipo de contenido que se va a enviar
-      //* el servidor espera recibir un JSON
-      headers: {'Content-Type': 'application/json'},
-      //* convierte el objeto a JSON
-      //* se envia la identificacion y la contrasena al servidor
-      //* el servidor devuelve un token y el usuario
-      body: jsonEncode({
-        'identificacion': identificacion,
-        'contrasena': contrasena,
-      }),
-    );
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final user = User.fromJson(data['user']);
+  String identificacion,
+  String contrasena,
+) async {
+  final response = await http.post(
+    Uri.parse('${baseUrl}auth/login'),
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode({
+      'identificacion': identificacion,
+      'contrasena': contrasena,
+    }),
+  );
 
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('token', data['token']);
-        await prefs.setString('user', jsonEncode(data['user']));
-      } catch (e) {
-        debugPrint('Error al guardar token en SharedPreferences: $e');
-      }
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    User user = User.fromJson(data['user']);
 
-      // 👉 Aquí llamas al método para guardar el token FCM
-      await enviarNotificacionDePrueba(user);
+    // Guardar token de sesión inicial y user (lo que venga del backend)
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('token', data['token']);
+    await prefs.setString('user', jsonEncode(data['user']));
 
-      return {'success': true, 'user': user};
-    } else {
-      if (response.statusCode == 403) {
-        return {'success': false, 'message': 'Credenciales incorrectas'};
+    // Obtener token FCM del dispositivo
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+    String? deviceToken;
+    try {
+      deviceToken = await messaging.getToken();
+    } catch (e) {
+      debugPrint('Error obteniendo token FCM: $e');
+      deviceToken = null;
+    }
+
+    if (deviceToken != null && deviceToken.isNotEmpty) {
+      debugPrint('Token del dispositivo: $deviceToken');
+
+      // Solo actualizar si el token nuevo es distinto
+      if (user.token_dispositivo != deviceToken) {
+        final updatedUser = User(
+          id: user.id,
+          nombre: user.nombre,
+          telefono: user.telefono,
+          email: user.email,
+          identificacion: user.identificacion,
+          genero: user.genero,
+          estado: user.estado,
+          tipo_identificacion: user.tipo_identificacion,
+          contrasena: user.contrasena,
+          tipo_usuario: user.tipo_usuario,
+          direccion: user.direccion,
+          token_dispositivo: deviceToken,
+        );
+
+        try {
+          final userService = UserService();
+          final ok = await userService.updateUsuario(updatedUser);
+
+          if (ok) {
+            // Guardar usuario actualizado en SharedPreferences
+            await prefs.setString('user', jsonEncode(updatedUser.toJson()));
+            user = updatedUser;
+            debugPrint('Usuario actualizado con token_dispositivo en backend.');
+          } else {
+            debugPrint('No se pudo actualizar el usuario en el backend.');
+            // opcional: reintentar más tarde o almacenar para sincronizar
+          }
+        } catch (e) {
+          debugPrint('Error al actualizar usuario con token: $e');
+        }
       } else {
-        //* si el servidor devuelve un error, se convierte el objeto a JSON
-        //* y se devuelve el mensaje de error
-        final data = jsonDecode(response.body);
-        // print(jsonEncode(data['user']));
-        return {
-          'success': false,
-          'message': data['message'] ?? 'Error en login',
-        };
+        // Token ya coincide, aseguramos que SharedPreferences tenga la versión actual
+        await prefs.setString('user', jsonEncode(user.toJson()));
       }
+    } else {
+      // No se obtuvo token FCM; dejamos el usuario como vino del backend
+      await prefs.setString('user', jsonEncode(user.toJson()));
+    }
+
+    return {'success': true, 'user': user};
+  } else {
+    if (response.statusCode == 403) {
+      return {'success': false, 'message': 'Credenciales incorrectas'};
+    } else {
+      final data = jsonDecode(response.body);
+      return {
+        'success': false,
+        'message': data['message'] ?? 'Error en login',
+      };
     }
   }
+}
 
   //! register se encarga de registrar al usuario
   //* se le pasa el nombre, email, tipo de identificacioncontraseña al servidor

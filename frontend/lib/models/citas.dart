@@ -16,6 +16,7 @@ class Citas {
   final double longitud;
   final Medico medico;
   final User usuario;
+  final String respuesta_medico;
 
   Citas({
     this.id,
@@ -30,6 +31,7 @@ class Citas {
     required this.longitud,
     required this.medico,
     required this.usuario,
+    this.respuesta_medico = '',
   });
 
   // Método para convertir un mapa a un objeto Citas
@@ -46,6 +48,7 @@ class Citas {
     longitud: json['longitud'].toDouble(),
     medico: Medico.fromJson(json['medico']),
     usuario: User.fromJson(json['usuario']),
+    respuesta_medico: json['respuesta_medico'] ?? '',
   );
 
   // Método para convertir un objeto Cita a un mapa
@@ -62,5 +65,6 @@ class Citas {
     'longitud': longitud,
     'medico': medico.toJson(),
     'usuario': usuario.toJson(),
+    'respuesta_medico': respuesta_medico,
   };
 }
