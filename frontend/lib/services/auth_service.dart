@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:frontend/api_helper.dart';
 import 'package:frontend/models/user.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class AuthService {
   final String baseUrl = dotenv.env['URL_API']!;
@@ -28,18 +30,20 @@ class AuthService {
     );
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
+      final user = User.fromJson(data['user']);
+
       try {
-        //! shared_preferences se encarga de guardar el token y el usuario
-        //! en el dispositivo del usuario
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', data['token']);
         await prefs.setString('user', jsonEncode(data['user']));
-        //   print(jsonEncode(data['user']));
       } catch (e) {
         debugPrint('Error al guardar token en SharedPreferences: $e');
       }
 
-      return {'success': true, 'user': User.fromJson(data['user'])};
+      // 👉 Aquí llamas al método para guardar el token FCM
+      await enviarNotificacionDePrueba(user);
+
+      return {'success': true, 'user': user};
     } else {
       if (response.statusCode == 403) {
         return {'success': false, 'message': 'Credenciales incorrectas'};
@@ -152,4 +156,32 @@ class AuthService {
     }
     return null; // Si no hay usuario o hubo error
   }
+
+  Future<void> enviarNotificacionDePrueba(User user) async {
+  final headers = await ApiHelper.getHeadersWithAuth();
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+  String? token = await messaging.getToken();
+
+  if (token != null) {
+    print("Token del dispositivo: $token");
+
+    final response = await http.post(
+      Uri.parse('${baseUrl}notificaciones/enviar'),
+      headers: headers,
+      body: jsonEncode({
+        'token': token,
+        'title': '🔥 Notificación de Prueba',
+        'body': 'Bro, esto es una prueba desde Flutter 💪🏽',
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      print("🔥 Notificación enviada desde el backend");
+    } else {
+      print("❌ Error al enviar notificación: ${response.body}");
+    }
+  }
+}
+
 }

@@ -55,7 +55,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         UserDetails userDetails = userDetailsService.loadUserByUsername(username);
         log.info("Authorities del usuario: {}", userDetails.getAuthorities());
         return new UsernamePasswordAuthenticationToken(
-                username,
+                userDetails,
                 null, // Contraseña no necesaria si ya estás autenticado
                 userDetails.getAuthorities()
         );
