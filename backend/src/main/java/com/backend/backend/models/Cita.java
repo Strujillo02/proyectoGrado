@@ -27,10 +27,10 @@ public class Cita {
     Especialidad especialidad;
 
     @Column(name = "fecha_registro")
-    Instant fechaRegistro;
+    Instant fecha_registro;
 
     @Column(name = "motivo_consulta", length = 45)
-    String motivoConsulta;
+    String motivo_consulta;
 
     @Column(name = "precio", length = 45)
     String precio;
@@ -39,10 +39,10 @@ public class Cita {
     String estado;
 
     @Column(name = "tipo_consulta", length = 45)
-    String tipoConsulta;
+    String tipo_consulta;
 
     @Column(name = "fecha_cita")
-    Instant fechaCita;
+    Instant fecha_cita;
 
     @Column(name = "latitud", precision = 9, scale = 6)
     BigDecimal latitud;
@@ -59,7 +59,7 @@ public class Cita {
     Usuario usuario;
 
     @Column(name = "respuesta_medico", length = 20)
-    String respuestaMedico;
+    String respuesta_medico;
 
 
 }

@@ -47,8 +47,8 @@ public class CitaController {
     public ResponseEntity<?> guardarCita(@RequestBody Cita cita) {
         try {
             cita.setEstado("Pendiente");
-            cita.setRespuestaMedico("Pendiente");
-            cita.setFechaRegistro(Instant.from(LocalDateTime.now()));
+            cita.setRespuesta_medico("Pendiente");
+            cita.setFecha_registro(Instant.from(LocalDateTime.now()));
 
             // Guardar la cita
             Cita citaGuardada = citaService.guardarCita(cita);
@@ -58,7 +58,7 @@ public class CitaController {
             Optional<Medico> medico = medicoRepository.findById(cita.getId());
             if (medico.isPresent()) {
                 Usuario usuarioMedico = medico.get().getUsuario(); // Aquí sacas el usuario
-                String token = usuarioMedico.getTokenDispositivo();
+                String token = usuarioMedico.getToken_dispositivo();
 
                 if (token != null && !token.isEmpty()) {
                     // Enviar notificación al médico
