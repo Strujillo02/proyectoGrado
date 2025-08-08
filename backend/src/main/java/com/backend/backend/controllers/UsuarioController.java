@@ -66,7 +66,7 @@ public class UsuarioController {
             }
             return ResponseEntity.ok(usuario);
         } catch (Exception e) {
-            log.error("Error al consultar el usuario: {}", e.getMessage());
+
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Collections.singletonMap("mensaje", "Error al consultar el usuario"));
         }

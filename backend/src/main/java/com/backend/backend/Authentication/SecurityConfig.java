@@ -37,9 +37,14 @@ public class SecurityConfig {
                         .requestMatchers("/medico/v1/update").hasAnyRole("Administrador")
                         .requestMatchers("/medico/v1/delete/").hasAnyRole("Administrador")
                         .requestMatchers("/medico/v1/create").hasAnyRole("Administrador")
-                        .requestMatchers("/user/v1/update").authenticated() // Permite actualizaciones a cualquier usuario autenticado
+                        .requestMatchers("/cita/**").hasAnyRole("Administrador", "Paciente", "Medico")
+                        .requestMatchers("/notificaciones/**").hasAnyRole("Administrador", "Paciente", "Medico")
+                       // .requestMatchers("/api/notificaciones/**").permitAll()
+                        .requestMatchers("/user/v1/update").authenticated()
+                        // Permite actualizaciones a cualquier usuario autenticado
                         .anyRequest().authenticated()
                 )
+
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
