@@ -65,7 +65,7 @@ public class Usuario  implements UserDetails {
     String direccion;
 
     @Column(name = "token_dispositivo")
-    String tokenDispositivo;
+    String token_dispositivo;
 
     @JsonIgnore
     @Override
