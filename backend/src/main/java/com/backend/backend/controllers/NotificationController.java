@@ -9,16 +9,25 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/notificaciones")
 @RequiredArgsConstructor
+@RequestMapping("/notification/v1")
+@CrossOrigin // opcional
 public class NotificationController {
 
-    @Autowired
-    private NotificacionService notificationService;
 
-    @PostMapping("/enviar")
-    public String enviarNotificacion(@RequestBody PushNotificationRequest request) {
-        notificationService.sendPushNotificationToToken(request);
-        return "Notificación enviada";
+    private final NotificacionService notificacionService;
+
+    @PostMapping("/test")
+    @PreAuthorize("hasAnyAuthority('ROLE_Administrador','ROLE_Medico','ROLE_Paciente')") // o quítalo si quieres público
+    public ResponseEntity<?> sendTest(@RequestBody PushNotificationRequest req) {
+        try {
+            if (req.getToken() == null || req.getToken().isBlank())
+                return ResponseEntity.badRequest().body("Token requerido");
+
+            String id = notificacionService.sendPushNotificationToToken(req);
+            return ResponseEntity.ok().body("{\"messageId\":\"" + id + "\"}");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("{\"error\":\"" + e.getMessage() + "\"}");
+        }
     }
 }
