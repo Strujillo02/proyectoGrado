@@ -44,37 +44,82 @@ public class CitaController {
 
     @PostMapping("create")
     @PreAuthorize("hasAnyAuthority('ROLE_Administrador', 'ROLE_Medico', 'ROLE_Paciente')")
-    public ResponseEntity<?> guardarCita(@RequestBody Cita cita) {
+    public ResponseEntity<?> crearCita(@RequestBody Cita cita) {
         try {
-            cita.setEstado("Pendiente");
-            cita.setRespuesta_medico("Pendiente");
-            cita.setFecha_registro(Instant.from(LocalDateTime.now()));
-
             // Guardar la cita
-            Cita citaGuardada = citaService.guardarCita(cita);
+            Cita citaGuardada = citaRepository.save(cita);
 
-            // Obtener el token del médico
-            // Obtener el médico con su usuario
-            Optional<Medico> medico = medicoRepository.findById(cita.getId());
-            if (medico.isPresent()) {
-                Usuario usuarioMedico = medico.get().getUsuario(); // Aquí sacas el usuario
-                String token = usuarioMedico.getToken_dispositivo();
+            // Obtener el médico relacionado
+            Optional<Medico> medicoOpt = medicoRepository.findById(citaGuardada.getMedico().getId());
+            if (medicoOpt.isPresent()) {
+                Medico medico = medicoOpt.get();
+
+                // El token está en el usuario asociado al médico
+                String token = medico.getUsuario().getToken_dispositivo();
 
                 if (token != null && !token.isEmpty()) {
-                    // Enviar notificación al médico
                     PushNotificationRequest noti = new PushNotificationRequest();
                     noti.setToken(token);
                     noti.setTitle("Solicitud de cita");
-                    noti.setBody("Tienes una solicitud de cita de un paciente. ¿Deseas aceptarla?");
+                    noti.setBody("Tienes una solicitud de cita del paciente: "
+                            + citaGuardada.getUsuario().getNombre() +
+                            ". ¿Deseas aceptarla?");
                     notificacionService.sendPushNotificationToToken(noti);
                 }
             }
 
-
             return ResponseEntity.ok(citaGuardada);
+
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error: " + e.getMessage());
         }
+    }
+
+    @PutMapping("/citas/{id}/respuesta")
+    @PreAuthorize("hasAuthority('ROLE_Medico')")
+    public ResponseEntity<?> responderCita(
+            @PathVariable Integer id,
+            @RequestParam String respuesta) {
+        try {
+            Optional<Cita> citaOpt = citaRepository.findById(id);
+            if (!citaOpt.isPresent()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Cita no encontrada");
+            }
+
+            Cita cita = citaOpt.get();
+
+            // Validar respuesta
+            if (!respuesta.equalsIgnoreCase("Aceptada") &&
+                    !respuesta.equalsIgnoreCase("Rechazada")) {
+                return ResponseEntity.badRequest().body("Respuesta inválida");
+            }
+
+            cita.setRespuesta_medico(respuesta);
+            cita.setEstado(respuesta.equalsIgnoreCase("Aceptada") ? "Confirmada" : "Cancelada");
+            citaRepository.save(cita);
+
+            // Notificar al paciente sobre la respuesta
+            Optional<Usuario> pacienteOpt = usuarioRepository.findById(cita.getUsuario().getId());
+            if (pacienteOpt.isPresent()) {
+                String tokenPaciente = pacienteOpt.get().getToken_dispositivo();
+                if (tokenPaciente != null && !tokenPaciente.isEmpty()) {
+                    PushNotificationRequest noti = new PushNotificationRequest();
+                    noti.setToken(tokenPaciente);
+                    noti.setTitle("Respuesta a tu cita");
+                    noti.setBody("El médico ha " + respuesta.toLowerCase() + " tu cita.");
+                    notificacionService.sendPushNotificationToToken(noti);
+                }
+            }
+
+            return ResponseEntity.ok("Respuesta registrada y notificación enviada");
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error: " + e.getMessage());
+        }
+    }
+
 
 /**
     @GetMapping("get")
@@ -98,4 +143,4 @@ public class CitaController {
     }
     */
     }
-}
+
