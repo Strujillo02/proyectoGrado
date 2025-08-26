@@ -40,6 +40,11 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const HomeAdmin(),
     ),
     GoRoute(
+      path: '/home/medico',
+      name: 'homeMedico',
+      builder: (context, state) => const HomeAdmin(),
+    ),
+    GoRoute(
       path: '/usuario/editar/:id',
       builder: (context, state) {
         //*se captura el id del usuario

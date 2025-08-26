@@ -44,7 +44,7 @@ class _LoginPageState extends State<LoginPage> {
       } else if (tipoUsuario == 'Paciente') {
         context.go('/home/paciente');
       } else if (tipoUsuario == 'Medico') {
-        context.go('/register');
+        context.go('/home/medico');
       } else {
         setState(() {
           errorMessage = 'Tipo de usuario no reconocido';
