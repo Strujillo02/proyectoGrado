@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.*;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -49,22 +51,25 @@ public class CitaController {
             // Guardar la cita
             Cita citaGuardada = citaRepository.save(cita);
 
-            // Obtener el médico relacionado
+            // Cargar médico y paciente desde BD para evitar null por lazy
             Optional<Medico> medicoOpt = medicoRepository.findById(citaGuardada.getMedico().getId());
+            Optional<Usuario> pacienteOpt = usuarioRepository.findById(citaGuardada.getUsuario().getId());
+
             if (medicoOpt.isPresent()) {
                 Medico medico = medicoOpt.get();
+                String token = (medico.getUsuario() != null) ? medico.getUsuario().getToken_dispositivo() : null;
 
-                // El token está en el usuario asociado al médico
-                String token = medico.getUsuario().getToken_dispositivo();
+                if (token != null && !token.isBlank()) {
+                    String pacienteNombre = pacienteOpt.map(Usuario::getNombre).orElse("");
 
-                if (token != null && !token.isEmpty()) {
-                    PushNotificationRequest noti = new PushNotificationRequest();
-                    noti.setToken(token);
-                    noti.setTitle("Solicitud de cita");
-                    noti.setBody("Tienes una solicitud de cita del paciente: "
-                            + citaGuardada.getUsuario().getNombre() +
-                            ". ¿Deseas aceptarla?");
-                    notificacionService.sendPushNotificationToToken(noti);
+                    Map<String, String> data = new HashMap<>();
+                    data.put("citaId", String.valueOf(citaGuardada.getId()));      // <- requerido para los botones
+                    data.put("pacienteNombre", pacienteNombre);                     // <- evita "null" en el cliente
+                    data.put("title", "Solicitud de cita");                         // opcional
+                    data.put("body", "Tienes una solicitud de cita.");              // opcional
+
+                    // Enviar DATA-ONLY (sin Notification) para que Flutter dibuje la notificación con acciones
+                    notificacionService.sendDataToToken(token, data);
                 }
             }
 
@@ -95,32 +100,33 @@ public class CitaController {
                 return ResponseEntity.badRequest().body("Respuesta inválida");
             }
 
+            // Actualizar cita
             cita.setRespuesta_medico(respuesta);
             cita.setEstado(respuesta.equalsIgnoreCase("Aceptada") ? "Confirmada" : "Cancelada");
             citaRepository.save(cita);
 
-            // Notificar al paciente sobre la respuesta
+            // Notificar al paciente sobre la respuesta (DATA-ONLY)
             Optional<Usuario> pacienteOpt = usuarioRepository.findById(cita.getUsuario().getId());
             if (pacienteOpt.isPresent()) {
                 String tokenPaciente = pacienteOpt.get().getToken_dispositivo();
                 if (tokenPaciente != null && !tokenPaciente.isEmpty()) {
-                    PushNotificationRequest noti = new PushNotificationRequest();
-                    noti.setToken(tokenPaciente);
-                    noti.setTitle("Respuesta a tu cita");
-                    noti.setBody("El médico ha " + respuesta.toLowerCase() + " tu cita.");
-                    notificacionService.sendPushNotificationToToken(noti);
+                    Map<String, String> data = new HashMap<>();
+                    data.put("title", "Respuesta a tu cita");
+                    data.put("body", "El médico ha " + respuesta.toLowerCase() + " tu cita.");
+                    data.put("citaId", String.valueOf(cita.getId())); // opcional para manejar en el cliente
+                    data.put("estado", cita.getEstado());             // opcional
+                    data.put("respuesta", respuesta);                 // opcional
+
+                    notificacionService.sendDataToToken(tokenPaciente, data);
                 }
             }
 
             return ResponseEntity.ok("Respuesta registrada y notificación enviada");
-
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error: " + e.getMessage());
         }
     }
-
-
 /**
     @GetMapping("get")
    // @PreAuthorize("hasAnyAuthority('Paciente', 'Medico', 'Administrador')")

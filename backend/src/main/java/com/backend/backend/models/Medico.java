@@ -31,4 +31,8 @@ public class Medico {
     @Column(name = "tarjeta_profe", length = 45)
     String tarjetaProfe;
 
+    @Column(name = "valor_consulta", length = 50)
+    String valor_consulta;
+
+
     }
