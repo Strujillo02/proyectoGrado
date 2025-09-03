@@ -1,11 +1,15 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:frontend/models/citas.dart';
 import 'package:frontend/models/especialidades.dart';
+import 'package:frontend/models/medico.dart';
 import 'package:frontend/services/citas_service.dart';
 import 'package:frontend/services/especialidades_service.dart';
+import 'package:frontend/services/medico_service.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-//Pantalla principal para solicitar una cita
 class PedircitaPage extends StatefulWidget {
   const PedircitaPage({super.key});
 
@@ -14,42 +18,116 @@ class PedircitaPage extends StatefulWidget {
 }
 
 class _PedircitaPageState extends State<PedircitaPage> {
-  //Clave para validar el formulario
   final _formKey = GlobalKey<FormState>();
 
-  //Variables para especialidades
+  // Especialidades
+  final _especialidadesService = EspecialidadesService();
   List<Especialidades> _especialidades = [];
   Especialidades? _especialidadSeleccionada;
-  final EspecialidadesService _especialidadesService = EspecialidadesService();
   bool _cargandoEspecialidades = true;
 
-  //Controladores para cada campo del formulario de citas
-  final motivoConsultaController = TextEditingController();
-  final ubicacionController = TextEditingController();
-  final fechaController = TextEditingController();
-  String? _tipoConsultaSeleccionado;
+  // Médicos
+  final _medicoService = MedicoService();
+  List<Medico> _medicos = [];
+  Medico? _medicoSeleccionado;
+  bool _cargandoMedicos = false;
 
-  // Control de carga y mensajes de error
+  // Campos de formulario
+  final motivoConsultaController = TextEditingController();
+  final fechaController = TextEditingController(); // yyyy-MM-dd
+  final direccionController = TextEditingController();
+  TimeOfDay? _horaSeleccionada;
+  String? _tipoConsultaSeleccionado; // 'Inmediata' | 'Agendada'
+  String? _medioPagoSeleccionado; // 'Efectivo' | 'PSE'
+
+  // Ubicación
+  double? _latitud;
+  double? _longitud;
+
+  // Estado
   bool isLoading = false;
   String? errorMessage;
 
   @override
   void initState() {
     super.initState();
-    cargarEspecialidades();
+    _cargarEspecialidades();
+    _obtenerUbicacion();
   }
 
-  void cargarEspecialidades() async {
+  Future<void> _cargarEspecialidades() async {
     try {
       final lista = await _especialidadesService.getEspecialidades();
       setState(() {
-        _especialidades = lista;
+        // Mostrar TODAS las especialidades; si deseas ocultar inactivas, filtra aquí.
+        _especialidades = List.of(lista)
+          ..sort((a, b) => a.nombre.compareTo(b.nombre));
         _cargandoEspecialidades = false;
       });
     } catch (e) {
       setState(() {
         _cargandoEspecialidades = false;
+        errorMessage = 'Error cargando especialidades: $e';
       });
+    }
+  }
+
+  Future<void> cargarMedicosPorEspecialidad(int especialidadId) async {
+    setState(() {
+      _cargandoMedicos = true;
+      _medicos = [];
+      _medicoSeleccionado = null;
+    });
+    try {
+      final lista = await _medicoService.getMedicos();
+      setState(() {
+        _medicos =
+            lista.where((m) => m.especialidad.id == especialidadId).toList();
+      });
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Error cargando médicos: $e';
+      });
+    } finally {
+      setState(() {
+        _cargandoMedicos = false;
+      });
+    }
+  }
+
+  Future<int?> _getUsuarioId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final s = prefs.getString('user');
+    if (s == null) return null;
+    try {
+      final map = jsonDecode(s) as Map<String, dynamic>;
+      final id = map['id'];
+      if (id is int) return id;
+      return int.tryParse(id?.toString() ?? '');
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _obtenerUbicacion() async {
+    try {
+      LocationPermission permiso = await Geolocator.checkPermission();
+      if (permiso == LocationPermission.denied) {
+        permiso = await Geolocator.requestPermission();
+      }
+      if (permiso == LocationPermission.deniedForever ||
+          permiso == LocationPermission.denied) {
+        return; // Dejar lat/long null; validaremos antes de enviar
+      }
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      setState(() {
+        _latitud = pos.latitude;
+        _longitud = pos.longitude;
+      });
+    } catch (e) {
+      // Ignorar y permitir continuar; lat/long quedarán null
     }
   }
 
@@ -67,17 +145,15 @@ class _PedircitaPageState extends State<PedircitaPage> {
           border: const OutlineInputBorder(),
         ),
         value: value,
-        items:
-            items
-                .map((item) => DropdownMenuItem(value: item, child: Text(item)))
-                .toList(),
+        items: items
+            .map((item) => DropdownMenuItem(value: item, child: Text(item)))
+            .toList(),
         onChanged: onChanged,
         validator: (value) => value == null ? 'Selecciona una opción' : null,
       ),
     );
   }
 
-  //Método para construir el formulario de solicitud de cita
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -89,10 +165,7 @@ class _PedircitaPageState extends State<PedircitaPage> {
             Icons.arrow_back_rounded,
             color: Color.fromARGB(255, 215, 215, 218),
           ),
-          onPressed:
-              () => context.go(
-                '/home/paciente',
-              ), //regrear a la pantalla de inicio del paciente
+          onPressed: () => context.go('/home/paciente'),
           iconSize: 35,
         ),
         elevation: 0,
@@ -104,7 +177,6 @@ class _PedircitaPageState extends State<PedircitaPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                //Título de la pantalla
                 const Padding(
                   padding: EdgeInsets.only(top: 25, bottom: 1),
                   child: Text(
@@ -126,17 +198,66 @@ class _PedircitaPageState extends State<PedircitaPage> {
                         _cargandoEspecialidades
                             ? const CircularProgressIndicator()
                             : buildDropdownField(
-                              label: 'Especialidad',
-                              value: _especialidadSeleccionada?.nombre,
-                              items:
-                                  _especialidades.map((e) => e.nombre).toList(),
-                              onChanged: (val) {
-                                setState(() {
-                                  _especialidadSeleccionada = _especialidades
-                                      .firstWhere((e) => e.nombre == val);
-                                });
-                              },
+                                label: 'Especialidad',
+                                value: _especialidadSeleccionada?.nombre,
+                                items: _especialidades
+                                    .map((e) => e.nombre)
+                                    .toList(),
+                                onChanged: (val) {
+                                  setState(() {
+                                    _especialidadSeleccionada = _especialidades
+                                        .firstWhere((e) => e.nombre == val);
+                                  });
+                                  final id = _especialidadSeleccionada?.id;
+                                  if (id != null)
+                                    cargarMedicosPorEspecialidad(id);
+                                },
+                              ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: 300,
+                          child: DropdownButtonFormField<String>(
+                            decoration: const InputDecoration(
+                              labelText: 'Medio de pago*',
+                              border: OutlineInputBorder(),
                             ),
+                            value: _medioPagoSeleccionado,
+                            items: const [
+                              DropdownMenuItem(
+                                  value: 'Efectivo', child: Text('Efectivo')),
+                              DropdownMenuItem(
+                                  value: 'PSE', child: Text('PSE')),
+                            ],
+                            onChanged: (val) =>
+                                setState(() => _medioPagoSeleccionado = val),
+                            validator: (value) => value == null
+                                ? 'Selecciona un medio de pago'
+                                : null,
+                          ),
+                        ),
+                        SizedBox(
+                          width: 300,
+                          child: _cargandoMedicos
+                              ? const LinearProgressIndicator()
+                              : DropdownButtonFormField<Medico>(
+                                  decoration: const InputDecoration(
+                                    labelText: 'Médico*',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  value: _medicoSeleccionado,
+                                  items: _medicos
+                                      .map((m) => DropdownMenuItem(
+                                            value: m,
+                                            child: Text(m.usuario.nombre),
+                                          ))
+                                      .toList(),
+                                  onChanged: (val) =>
+                                      setState(() => _medicoSeleccionado = val),
+                                  validator: (val) => val == null
+                                      ? 'Selecciona un médico'
+                                      : null,
+                                ),
+                        ),
                         const SizedBox(height: 16),
                         SizedBox(
                           width: 300,
@@ -147,11 +268,9 @@ class _PedircitaPageState extends State<PedircitaPage> {
                               border: OutlineInputBorder(),
                               prefixIcon: Icon(Icons.search),
                             ),
-                            validator:
-                                (value) =>
-                                    value == null || value.isEmpty
-                                        ? 'Este campo es obligatorio'
-                                        : null,
+                            validator: (value) => value == null || value.isEmpty
+                                ? 'Este campo es obligatorio'
+                                : null,
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -163,75 +282,79 @@ class _PedircitaPageState extends State<PedircitaPage> {
                               border: OutlineInputBorder(),
                             ),
                             value: _tipoConsultaSeleccionado,
-                            items:
-                                ['Inmediata', 'Agendada']
-                                    .map(
-                                      (tipo) => DropdownMenuItem(
-                                        value: tipo,
-                                        child: Text(tipo),
-                                      ),
-                                    )
-                                    .toList(),
+                            items: const [
+                              DropdownMenuItem(
+                                  value: 'Inmediata', child: Text('Inmediata')),
+                              DropdownMenuItem(
+                                  value: 'Agendada', child: Text('Agendada')),
+                            ],
                             onChanged: (val) {
                               setState(() {
                                 _tipoConsultaSeleccionado = val;
+                                if (val == 'Inmediata') {
+                                  fechaController.clear();
+                                  _horaSeleccionada = null;
+                                }
                               });
                             },
-                            validator:
-                                (value) =>
-                                    value == null
-                                        ? 'Selecciona una opción'
-                                        : null,
+                            validator: (value) =>
+                                value == null ? 'Selecciona una opción' : null,
                           ),
                         ),
                         const SizedBox(height: 16),
-                        SizedBox(
-                          width: 300,
-                          child: TextFormField(
-                            controller: ubicacionController,
-                            readOnly: false,
-                            decoration: const InputDecoration(
-                              labelText: 'Ubicación*',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.location_on),
+                        if (_tipoConsultaSeleccionado == 'Agendada') ...[
+                          SizedBox(
+                            width: 300,
+                            child: TextFormField(
+                              controller: fechaController,
+                              readOnly: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Seleccione la fecha*',
+                                border: OutlineInputBorder(),
+                                prefixIcon: Icon(Icons.calendar_today),
+                              ),
+                              onTap: () async {
+                                DateTime? picked = await showDatePicker(
+                                  context: context,
+                                  initialDate: DateTime.now(),
+                                  firstDate: DateTime.now(),
+                                  lastDate: DateTime(2100),
+                                );
+                                if (picked != null) {
+                                  final hora = await showTimePicker(
+                                    context: context,
+                                    initialTime: TimeOfDay.now(),
+                                  );
+                                  setState(() {
+                                    _horaSeleccionada = hora;
+                                    fechaController.text = picked
+                                        .toLocal()
+                                        .toString()
+                                        .split(' ')
+                                        .first;
+                                  });
+                                }
+                              },
+                              validator: (value) =>
+                                  (value == null || value.isEmpty)
+                                      ? 'Selecciona una fecha'
+                                      : null,
                             ),
-                            validator:
-                                (value) =>
-                                    value == null || value.isEmpty
-                                        ? 'Este campo es obligatorio'
-                                        : null,
                           ),
-                        ),
-                        const SizedBox(height: 16),
+                          const SizedBox(height: 16),
+                        ],
                         SizedBox(
                           width: 300,
                           child: TextFormField(
-                            controller: fechaController,
-                            readOnly: true,
+                            controller: direccionController,
                             decoration: const InputDecoration(
-                              labelText: 'Seleccione la fecha*',
+                              labelText: 'Dirección*',
                               border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.calendar_today),
+                              prefixIcon: Icon(Icons.location_on_outlined),
                             ),
-                            onTap: () async {
-                              DateTime? picked = await showDatePicker(
-                                context: context,
-                                initialDate: DateTime.now(),
-                                firstDate: DateTime.now(),
-                                lastDate: DateTime(2100),
-                              );
-                              if (picked != null) {
-                                setState(() {
-                                  fechaController.text =
-                                      picked.toLocal().toString().split(' ')[0];
-                                });
-                              }
-                            },
-                            validator:
-                                (value) =>
-                                    value == null || value.isEmpty
-                                        ? 'Selecciona una fecha'
-                                        : null,
+                            validator: (value) => value == null || value.isEmpty
+                                ? 'Este campo es obligatorio'
+                                : null,
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -240,100 +363,127 @@ class _PedircitaPageState extends State<PedircitaPage> {
                           height: 50,
                           child: ElevatedButton(
                             onPressed: () async {
-                              if (_formKey.currentState!.validate()) {
-                                setState(() {
-                                  isLoading = true;
-                                  errorMessage = null;
-                                });
+                              if (!_formKey.currentState!.validate()) return;
+                              setState(() {
+                                isLoading = true;
+                                errorMessage = null;
+                              });
 
-                               /* try {
-                                  final now = DateTime.now();
-                                  final nuevaCita = Citas(
-                                    especialidad: _especialidadSeleccionada!,
-                                    fecha_registro: now,
-                                    motivo_consulta:
-                                        motivoConsultaController.text,
-                                    precio:
-                                        '0', 
-                                    estado: 'Pendiente',
-                                    tipo_consulta: _tipoConsultaSeleccionado!,
-                                    fecha_cita: DateTime.parse(
-                                      fechaController.text,
-                                    ),
-                                    latitud:
-                                        0.0, 
-                                    longitud: 0.0,
-                                   /* medico:
-                                        Medico.empty(), // Debes ajustar esto con el médico real
-                                    usuario:
-                                        User.empty(), // Ajusta según el usuario autenticado*/
-                                  );
+                              try {
+                                if (_especialidadSeleccionada?.id == null) {
+                                  throw Exception(
+                                      'Selecciona una especialidad');
+                                }
+                                if (_medicoSeleccionado?.id == null) {
+                                  throw Exception('Selecciona un médico');
+                                }
 
-                                  final success = await CitasService()
-                                      .createCitas(nuevaCita);
+                                final usuarioId = await _getUsuarioId();
+                                if (usuarioId == null) {
+                                  throw Exception(
+                                      'No se pudo obtener el usuario autenticado');
+                                }
 
-                                  if (success) {
-                                    if (!mounted) return;
-                                    showDialog(
-                                      context: context,
-                                      builder:
-                                          (_) => AlertDialog(
-                                            title: const Text(
-                                              'Cita solicitada',
-                                            ),
-                                            content: const Text(
-                                              'Tu cita fue registrada exitosamente.',
-                                            ),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () {
-                                                  Navigator.pop(context);
-                                                  context.go('/home/paciente');
-                                                },
-                                                child: const Text('OK'),
-                                              ),
-                                            ],
-                                          ),
-                                    );
-                                  } else {
-                                    setState(() {
-                                      errorMessage =
-                                          'Error al registrar la cita.';
-                                    });
+                                // Construir fecha y hora
+                                DateTime fechaCita;
+                                if (_tipoConsultaSeleccionado == 'Agendada') {
+                                  final fechaTxt = fechaController.text.trim();
+                                  final partes = fechaTxt.split('-');
+                                  if (partes.length != 3) {
+                                    throw Exception('Fecha inválida');
                                   }
-                                } catch (e) {
-                                  setState(() {
-                                    errorMessage = 'Error: ${e.toString()}';
-                                  });
-                                } finally {
-                                  setState(() {
-                                    isLoading = false;
-                                  });
-                                }*/
+                                  final y = int.parse(partes[0]);
+                                  final m = int.parse(partes[1]);
+                                  final d = int.parse(partes[2]);
+                                  final hora = _horaSeleccionada ??
+                                      const TimeOfDay(hour: 9, minute: 0);
+                                  fechaCita =
+                                      DateTime(y, m, d, hora.hour, hora.minute);
+                                } else {
+                                  fechaCita = DateTime.now();
+                                }
+
+                                // Ubicación
+                                if (_latitud == null || _longitud == null) {
+                                  await _obtenerUbicacion();
+                                }
+                                final lat = _latitud ?? 0.0;
+                                final lon = _longitud ?? 0.0;
+
+                                final ok = await CitasService().crearCitaSimple(
+                                  especialidadId:
+                                      _especialidadSeleccionada!.id!,
+                                  medicoId: _medicoSeleccionado!.id!,
+                                  usuarioId: usuarioId,
+                                  motivoConsulta:
+                                      motivoConsultaController.text.trim(),
+                                  tipoConsulta: _tipoConsultaSeleccionado!,
+                                  fechaCita: fechaCita,
+                                  direccion: direccionController.text.trim(),
+                                  medioPago: _medioPagoSeleccionado!,
+                                  latitud: lat,
+                                  longitud: lon,
+                                );
+
+                                if (!mounted) return;
+                                if (ok) {
+                                  await showDialog(
+                                    context: context,
+                                    builder: (_) => AlertDialog(
+                                      title: const Text('Cita solicitada'),
+                                      content: const Text(
+                                          'Tu cita fue registrada exitosamente.'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context),
+                                          child: const Text('OK'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                  context.go('/home/paciente');
+                                } else {
+                                  setState(() => errorMessage =
+                                      'Error al registrar la cita.');
+                                }
+                              } catch (e) {
+                                if (!mounted) return;
+                                setState(() => errorMessage = e.toString());
+                              } finally {
+                                if (mounted) {
+                                  setState(() => isLoading = false);
+                                }
                               }
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color.fromRGBO(
-                                21,
-                                99,
-                                161,
-                                1,
-                              ),
+                              backgroundColor:
+                                  const Color.fromRGBO(21, 99, 161, 1),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
                             ),
-                            child:
-                                isLoading
-                                    ? const CircularProgressIndicator(
-                                      color: Colors.white,
-                                    )
-                                    : const Text(
-                                      'Solicitar cita',
-                                      style: TextStyle(color: Colors.white),
-                                    ),
+                            child: isLoading
+                                ? const CircularProgressIndicator(
+                                    color: Colors.white,
+                                  )
+                                : const Text(
+                                    'Solicitar cita',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
                           ),
                         ),
+                        if (errorMessage != null) ...[
+                          const SizedBox(height: 12),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Text(
+                              errorMessage!,
+                              style: const TextStyle(color: Colors.red),
+                              textAlign: TextAlign.center,
+                            ),
+                          )
+                        ],
                         const SizedBox(height: 24),
                       ],
                     ),

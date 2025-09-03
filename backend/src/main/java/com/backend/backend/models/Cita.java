@@ -50,6 +50,9 @@ public class Cita {
     @Column(name = "longitud", precision = 9, scale = 6)
     BigDecimal longitud;
 
+    @Column(name = "direccion", length = 75)
+    String direccion;
+
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "medico_id", nullable = false)
     Medico medico;
@@ -60,6 +63,12 @@ public class Cita {
 
     @Column(name = "respuesta_medico", length = 20)
     String respuesta_medico;
+
+    @Column(name = "medio_pago", length = 75)
+    String medio_pago;
+
+    @Column(name = "estado_pago", length = 75)
+    String estado_pago;
 
 
 }
