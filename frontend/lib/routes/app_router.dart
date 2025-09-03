@@ -5,6 +5,7 @@ import 'package:frontend/views/auth/register_page.dart';
 import 'package:frontend/views/especialidades/editarespecialidades_page.dart';
 import 'package:frontend/views/especialidades/especialidades_page.dart';
 import 'package:frontend/views/medicos/editarmedico_page.dart';
+import 'package:frontend/views/medicos/home_medico.dart';
 import 'package:frontend/views/pacientes/home_paciente.dart';
 import 'package:frontend/views/pacientes/solicitar_cita.dart';
 import 'package:frontend/views/usuarios/editaruser_page.dart';
@@ -38,6 +39,11 @@ final GoRouter appRouter = GoRouter(
       path: '/home/admin',
       name: 'homeAdmin',
       builder: (context, state) => const HomeAdmin(),
+    ),
+    GoRoute(
+      path: '/home/medico',
+      name: 'homeMedico',
+      builder: (context, state) => const HomeMedico(),
     ),
     GoRoute(
       path: '/usuario/editar/:id',
