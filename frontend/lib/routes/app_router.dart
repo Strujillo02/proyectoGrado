@@ -43,7 +43,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/home/medico',
       name: 'homeMedico',
-      builder: (context, state) => const HomeMedi(),
+      builder: (context, state) => const HomeMedico(),
     ),
     GoRoute(
       path: '/usuario/editar/:id',
