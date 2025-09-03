@@ -7,12 +7,15 @@ import com.google.firebase.messaging.Notification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 public class NotificacionService {
 
     private final FirebaseMessaging firebaseMessaging;
 
+    // Envía notificación con bloque Notification (útil para pruebas simples)
     public String sendPushNotificationToToken(PushNotificationRequest request) throws Exception {
         Notification notification = Notification.builder()
                 .setTitle(request.getTitle())
@@ -24,9 +27,20 @@ public class NotificacionService {
                 .setNotification(notification)
                 .build();
 
-        // Usa el bean inyectado (no FirebaseMessaging.getInstance())
         String messageId = firebaseMessaging.send(message);
         System.out.println("✅ Notificación enviada. messageId=" + messageId);
+        return messageId;
+    }
+
+    // Envía mensaje SOLO CON DATA (sin Notification) para que el cliente Flutter pinte la notificación con botones
+    public String sendDataToToken(String token, Map<String, String> data) throws Exception {
+        Message message = Message.builder()
+                .setToken(token)
+                .putAllData(data)
+                .build();
+
+        String messageId = firebaseMessaging.send(message);
+        System.out.println("✅ Data-Only enviada. messageId=" + messageId + ", data=" + data);
         return messageId;
     }
 }
