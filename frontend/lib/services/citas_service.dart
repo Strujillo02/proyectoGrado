@@ -168,6 +168,14 @@ class CitasService {
       final response = await http.post(uri, headers: headers, body: body);
       if (response.statusCode == 200 || response.statusCode == 201) return true;
       final details = response.body.isNotEmpty ? response.body : 'sin cuerpo';
+      if (response.statusCode == 401) {
+        throw Exception(
+            'No autorizado (401). Inicia sesión nuevamente. Detalle: $details');
+      }
+      if (response.statusCode == 403) {
+        throw Exception(
+            'Permisos insuficientes (403). Verifica tu rol o el token. Detalle: $details');
+      }
       throw Exception('Error al crear cita (${response.statusCode}): $details');
     } catch (e) {
       throw Exception('Error al crear cita simple: $e');

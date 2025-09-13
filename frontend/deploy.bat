@@ -12,7 +12,7 @@ call flutter.bat build apk --release
 
 REM IDs de tus dispositivos
 set DEVICE1=R58N225A25R
-set DEVICE2=zY326RJXH4
+set DEVICE2=ZY326RJXH4
 
 echo Instalando en dispositivo %DEVICE1%...
 call flutter.bat install -d %DEVICE1%

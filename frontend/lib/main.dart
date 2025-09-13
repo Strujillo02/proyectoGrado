@@ -105,6 +105,18 @@ Future<void> _onBackgroundNotificationResponse(
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
+
+  // === Logs de verificación del .env ===
+  final api = dotenv.env['URL_API'] ?? '';
+  final pk  = dotenv.env['WOMPI_PUBLIC_KEY'] ?? '';
+  final red = dotenv.env['WOMPI_REDIRECT_URL'] ?? '';
+  final sec = dotenv.env['WOMPI_INTEGRITY_SECRET'] ?? '';
+  debugPrint('[ENV] URL_API=$api');
+  debugPrint('[ENV] WOMPI_PUBLIC_KEY=${pk.isNotEmpty ? pk.substring(0, 12) + '...' : 'EMPTY'}');
+  debugPrint('[ENV] WOMPI_REDIRECT_URL=${red.isNotEmpty ? red : 'EMPTY'}');
+  debugPrint('[ENV] WOMPI_INTEGRITY_SECRET len=${sec.length} prefixOk=${sec.startsWith('test_integrity_')}');
+  // =====================================
+
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);

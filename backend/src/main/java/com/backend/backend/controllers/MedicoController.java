@@ -27,13 +27,11 @@ public class MedicoController {
     @Autowired
     private MedicoRepository medicoRepository;
 
-
     @PostMapping("create")
-    @PreAuthorize("hasRole('Administrador')")
+    @PreAuthorize("hasAuthority('Administrador')")
     public Medico guardarMedico(@RequestBody Medico medico) {
         return medicoService.guardarMedico(medico);
     }
-
 
     @GetMapping("get")
     public ArrayList<Medico> obtenerMedicos() {
@@ -41,17 +39,21 @@ public class MedicoController {
     }
 
     @DeleteMapping("/delete/{id}")
-    @PreAuthorize("hasRole('Administrador')")
-    public String eliminarMedico(@PathVariable int id){
+    @PreAuthorize("hasAuthority('Administrador')")
+    public String eliminarMedico(@PathVariable int id) {
         medicoService.eliminar(id);
         return "medico eliminado correctamente";
     }
 
     @PutMapping("/update")
-    @PreAuthorize("hasRole('Administrador')")
+    @PreAuthorize("hasAuthority('Administrador')")
     public Medico actualizarMedico(@RequestBody Medico medico) {
-
-        return  medicoService.guardarMedico(medico);
+        return medicoService.guardarMedico(medico);
     }
 
+    @GetMapping("/getValorConsulta/{usuarioId}")
+    @PreAuthorize("hasAnyAuthority('Administrador','ROLE_Administrador', 'Medico', 'ROLE_Medico', 'Paciente', 'ROLE_Paciente')")
+    public int consultarValorConsulta(@PathVariable int usuarioId) {
+        return medicoService.consultarValorConsulta(usuarioId);
+    }
 }

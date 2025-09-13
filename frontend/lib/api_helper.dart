@@ -10,9 +10,13 @@ class ApiHelper {
   /// Construye los headers con el token para enviar en solicitudes protegidas
   static Future<Map<String, String>> getHeadersWithAuth() async {
     final token = await getToken();
-    return {
+    final headers = <String, String>{
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
+      'Accept': 'application/json',
     };
+    if (token != null && token.isNotEmpty && token.toLowerCase() != 'null') {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    return headers;
   }
 }

@@ -8,6 +8,7 @@ import 'package:frontend/views/medicos/editarmedico_page.dart';
 import 'package:frontend/views/medicos/home_medico.dart';
 import 'package:frontend/views/pacientes/home_paciente.dart';
 import 'package:frontend/views/pacientes/solicitar_cita.dart';
+import 'package:frontend/views/pagos/wompi_pse_page.dart';
 import 'package:frontend/views/usuarios/editaruser_page.dart';
 import 'package:frontend/views/usuarios/home_admin.dart';
 import 'package:frontend/views/usuarios/user_page.dart';
@@ -19,6 +20,24 @@ final GoRouter appRouter = GoRouter(
       path: '/',
       name: 'login',
       builder: (context, state) => const LoginPage(),
+    ),
+    GoRoute(
+      path: '/pago/wompi',
+      name: 'wompiPSE',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        final montoCOP = (extra?['montoCOP'] as int?) ?? 15000; // valor prueba
+        final referencia = (extra?['referencia'] as String?) ??
+            'REF-${DateTime.now().millisecondsSinceEpoch}';
+        final redirectUrl = extra?['redirectUrl'] as String?;
+        final descripcion = extra?['descripcion'] as String?;
+        return WompiPSEPage(
+          montoCOP: montoCOP,
+          referencia: referencia,
+          redirectUrl: redirectUrl,
+          descripcion: descripcion,
+        );
+      },
     ),
     GoRoute(
       path: '/register',
@@ -43,41 +62,38 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/home/medico',
       name: 'homeMedico',
-      builder: (context, state) => const HomeMedico(),
+      builder: (context, state) => const HomeMedi(),
     ),
     GoRoute(
-      path: '/usuario/editar/:id',
-      builder: (context, state) {
-        //*se captura el id del usuario
-        final id = int.parse(state.pathParameters['id']!);
-        return EditarUsuarioPage(id: id);
-      }
-    ),
+        path: '/usuario/editar/:id',
+        builder: (context, state) {
+          //*se captura el id del usuario
+          final id = int.parse(state.pathParameters['id']!);
+          return EditarUsuarioPage(id: id);
+        }),
     GoRoute(
-      path: '/medico/editar/:id',
-      builder: (context, state) {
-        //*se captura el id del medico
-        final id = int.parse(state.pathParameters['id']!);
-        return EditarMedicoPage(id: id);
-      }
-    ),
+        path: '/medico/editar/:id',
+        builder: (context, state) {
+          //*se captura el id del medico
+          final id = int.parse(state.pathParameters['id']!);
+          return EditarMedicoPage(id: id);
+        }),
     GoRoute(
-      path: '/especialidades/editar/:id',
-      builder: (context, state) { 
-        //*se captura el id de la especialidad
-        final id = int.parse(state.pathParameters['id']!);
-        return EditarEspecialidadesPage(id: id);
-      }
-      ),
-       GoRoute(
+        path: '/especialidades/editar/:id',
+        builder: (context, state) {
+          //*se captura el id de la especialidad
+          final id = int.parse(state.pathParameters['id']!);
+          return EditarEspecialidadesPage(id: id);
+        }),
+    GoRoute(
       path: '/home/paciente',
       name: 'homePaciente',
       builder: (context, state) => const HomePaciente(),
     ),
-      GoRoute(
+    GoRoute(
       path: '/solicitar/cita',
       name: 'solicitarCita',
       builder: (context, state) => const PedircitaPage(),
     ),
-    ],
+  ],
 );

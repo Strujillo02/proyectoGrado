@@ -29,4 +29,8 @@ public class MedicoService {
         }
 
     }
+    public int consultarValorConsulta(int usuarioId) {
+       int valor = Integer.parseInt(medicoRepository.findValorConsultaByUsuarioId(usuarioId));
+       return valor;
+    }
 }
