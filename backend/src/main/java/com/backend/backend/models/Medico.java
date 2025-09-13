@@ -32,7 +32,7 @@ public class Medico {
     String tarjetaProfe;
 
     @Column(name = "valor_consulta", length = 50)
-    String valor_consulta;
+    Integer valor_consulta;
 
 
     }

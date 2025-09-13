@@ -2,11 +2,16 @@
     <!-- Permisos de ubicación -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- Permiso de Internet para llamadas HTTP/HTTPS -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:label="frontend"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
-        android:enableOnBackInvokedCallback="true">
+    android:enableOnBackInvokedCallback="true"
+    android:usesCleartextTraffic="true">
+    <!-- Habilita HTTP sin TLS (solo para desarrollo). Quita esto en producción
+         o usa un networkSecurityConfig específico. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"

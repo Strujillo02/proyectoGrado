@@ -29,25 +29,31 @@ public class SecurityConfig {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll() // Permite acceso sin autenticación a /auth/
-                        .requestMatchers("/user/v1/delete/**").hasRole("Administrador")// Solo administradores pueden eliminar usuarios
-                        .requestMatchers("/especialidad/v1/create").hasRole("Administrador")
-                        .requestMatchers("/especialidad/v1/delete/**").hasRole("Administrador")
-                        .requestMatchers("/especialidad/v1/update").hasRole("Administrador")
-                        .requestMatchers("/medico/v1/update").hasAnyRole("Administrador")
-                        .requestMatchers("/medico/v1/delete/").hasAnyRole("Administrador")
-                        .requestMatchers("/medico/v1/create").hasAnyRole("Administrador")
-                        .requestMatchers("/cita/**").hasAnyRole("Administrador", "Paciente", "Medico")
-                        .requestMatchers("/notificaciones/**").hasAnyRole("Administrador", "Paciente", "Medico")
-                       // .requestMatchers("/api/notificaciones/**").permitAll()
+                        .requestMatchers("/auth/**").permitAll()
+
+                        // Usuarios
+                        .requestMatchers("/user/v1/delete/**").hasAuthority("Administrador")
                         .requestMatchers("/user/v1/update").authenticated()
-                        // Permite actualizaciones a cualquier usuario autenticado
+
+                        // Especialidad
+                        .requestMatchers("/especialidad/v1/create").hasAuthority("Administrador")
+                        .requestMatchers("/especialidad/v1/delete/**").hasAuthority("Administrador")
+                        .requestMatchers("/especialidad/v1/update").hasAuthority("Administrador")
+
+                        // Médico
+                        .requestMatchers("/medico/v1/create").hasAuthority("Administrador")
+                        .requestMatchers("/medico/v1/update").hasAuthority("Administrador")
+                        .requestMatchers("/medico/v1/delete/**").hasAuthority("Administrador")
+                        .requestMatchers("/medico/v1/getValorConsulta/**")
+                        .hasAnyAuthority("Administrador","ROLE_Administrador", "Medico", "ROLE_Medico", "Paciente", "ROLE_Paciente")
+
+                        // Citas y notificaciones
+                        .requestMatchers("/cita/**").hasAnyAuthority("Administrador","ROLE_Administrador", "Medico", "ROLE_Medico", "Paciente", "ROLE_Paciente")
+                        .requestMatchers("/notificaciones/**").hasAnyAuthority("Administrador","Paciente","Medico")
+
                         .anyRequest().authenticated()
                 )
-
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authProvider)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

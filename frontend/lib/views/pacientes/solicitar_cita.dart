@@ -19,6 +19,14 @@ class PedircitaPage extends StatefulWidget {
 
 class _PedircitaPageState extends State<PedircitaPage> {
   final _formKey = GlobalKey<FormState>();
+  String _formatCOP(int value) {
+    final s = value.toString();
+    final withDots = s.replaceAllMapped(
+      RegExp(r"\B(?=(\d{3})+(?!\d))"),
+      (m) => '.',
+    );
+    return 'COP $withDots';
+  }
 
   // Especialidades
   final _especialidadesService = EspecialidadesService();
@@ -31,6 +39,7 @@ class _PedircitaPageState extends State<PedircitaPage> {
   List<Medico> _medicos = [];
   Medico? _medicoSeleccionado;
   bool _cargandoMedicos = false;
+  int? _valorConsultaCOP; // precio en COP del médico seleccionado
 
   // Campos de formulario
   final motivoConsultaController = TextEditingController();
@@ -77,6 +86,7 @@ class _PedircitaPageState extends State<PedircitaPage> {
       _cargandoMedicos = true;
       _medicos = [];
       _medicoSeleccionado = null;
+      _valorConsultaCOP = null;
     });
     try {
       final lista = await _medicoService.getMedicos();
@@ -188,7 +198,7 @@ class _PedircitaPageState extends State<PedircitaPage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 16),
                 Form(
                   key: _formKey,
                   child: Padding(
@@ -207,6 +217,8 @@ class _PedircitaPageState extends State<PedircitaPage> {
                                   setState(() {
                                     _especialidadSeleccionada = _especialidades
                                         .firstWhere((e) => e.nombre == val);
+                                    // Reset médico seleccionado al cambiar especialidad
+                                    _medicoSeleccionado = null;
                                   });
                                   final id = _especialidadSeleccionada?.id;
                                   if (id != null)
@@ -216,27 +228,6 @@ class _PedircitaPageState extends State<PedircitaPage> {
                         const SizedBox(height: 16),
                         SizedBox(
                           width: 300,
-                          child: DropdownButtonFormField<String>(
-                            decoration: const InputDecoration(
-                              labelText: 'Medio de pago*',
-                              border: OutlineInputBorder(),
-                            ),
-                            value: _medioPagoSeleccionado,
-                            items: const [
-                              DropdownMenuItem(
-                                  value: 'Efectivo', child: Text('Efectivo')),
-                              DropdownMenuItem(
-                                  value: 'PSE', child: Text('PSE')),
-                            ],
-                            onChanged: (val) =>
-                                setState(() => _medioPagoSeleccionado = val),
-                            validator: (value) => value == null
-                                ? 'Selecciona un medio de pago'
-                                : null,
-                          ),
-                        ),
-                        SizedBox(
-                          width: 300,
                           child: _cargandoMedicos
                               ? const LinearProgressIndicator()
                               : DropdownButtonFormField<Medico>(
@@ -244,21 +235,80 @@ class _PedircitaPageState extends State<PedircitaPage> {
                                     labelText: 'Médico*',
                                     border: OutlineInputBorder(),
                                   ),
-                                  value: _medicoSeleccionado,
+                                  key: ValueKey(
+                                      'medicos_${_especialidadSeleccionada?.id ?? 'none'}'),
+                                  // Asegura que el value sea la instancia contenida en items
+                                  value: (() {
+                                    if (_medicoSeleccionado == null)
+                                      return null;
+                                    final selId = _medicoSeleccionado!.id;
+                                    if (selId == null) return null;
+                                    final match =
+                                        _medicos.where((m) => m.id == selId);
+                                    return match.isNotEmpty
+                                        ? match.first
+                                        : null;
+                                  })(),
                                   items: _medicos
                                       .map((m) => DropdownMenuItem(
                                             value: m,
                                             child: Text(m.usuario.nombre),
                                           ))
                                       .toList(),
-                                  onChanged: (val) =>
-                                      setState(() => _medicoSeleccionado = val),
+                                  onChanged: (val) async {
+                                    setState(() {
+                                      _medicoSeleccionado = val;
+                                      _valorConsultaCOP = null;
+                                    });
+                                    if (val?.id != null) {
+                                      try {
+                                        final int targetId =
+                                            (val!.usuario.id != null)
+                                                ? val.usuario.id!
+                                                : val.id!;
+                                        final precio = await _medicoService
+                                            .getValorConsultaPorUsuario(
+                                                targetId);
+                                        if (!mounted) return;
+                                        setState(
+                                            () => _valorConsultaCOP = precio);
+                                      } catch (e) {
+                                        if (!mounted) return;
+                                        setState(() => errorMessage =
+                                            'No se pudo obtener el valor de la consulta: $e');
+                                      }
+                                    }
+                                  },
                                   validator: (val) => val == null
                                       ? 'Selecciona un médico'
                                       : null,
                                 ),
                         ),
                         const SizedBox(height: 16),
+                        if (_valorConsultaCOP != null)
+                          SizedBox(
+                            width: 300,
+                            child: Card(
+                              color: const Color(0xFFF4F6F8),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12.0),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('Valor consulta:',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w600)),
+                                    Text(_formatCOP(_valorConsultaCOP!),
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.w700)),
+                                  ].map((w) {
+                                    return w;
+                                  }).toList(),
+                                ),
+                              ),
+                            ),
+                          ),
                         SizedBox(
                           width: 300,
                           child: TextFormField(
@@ -357,6 +407,28 @@ class _PedircitaPageState extends State<PedircitaPage> {
                                 : null,
                           ),
                         ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: 300,
+                          child: DropdownButtonFormField<String>(
+                            decoration: const InputDecoration(
+                              labelText: 'Medio de pago*',
+                              border: OutlineInputBorder(),
+                            ),
+                            value: _medioPagoSeleccionado,
+                            items: const [
+                              DropdownMenuItem(
+                                  value: 'Efectivo', child: Text('Efectivo')),
+                              DropdownMenuItem(
+                                  value: 'PSE', child: Text('PSE')),
+                            ],
+                            onChanged: (val) =>
+                                setState(() => _medioPagoSeleccionado = val),
+                            validator: (value) => value == null
+                                ? 'Selecciona un medio de pago'
+                                : null,
+                          ),
+                        ),
                         const SizedBox(height: 24),
                         SizedBox(
                           width: 300,
@@ -410,6 +482,8 @@ class _PedircitaPageState extends State<PedircitaPage> {
                                 final lat = _latitud ?? 0.0;
                                 final lon = _longitud ?? 0.0;
 
+                                final precio =
+                                    _valorConsultaCOP?.toDouble() ?? 0.0;
                                 final ok = await CitasService().crearCitaSimple(
                                   especialidadId:
                                       _especialidadSeleccionada!.id!,
@@ -423,26 +497,80 @@ class _PedircitaPageState extends State<PedircitaPage> {
                                   medioPago: _medioPagoSeleccionado!,
                                   latitud: lat,
                                   longitud: lon,
+                                  precio: precio,
                                 );
 
                                 if (!mounted) return;
                                 if (ok) {
-                                  await showDialog(
-                                    context: context,
-                                    builder: (_) => AlertDialog(
-                                      title: const Text('Cita solicitada'),
-                                      content: const Text(
-                                          'Tu cita fue registrada exitosamente.'),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.pop(context),
-                                          child: const Text('OK'),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                  context.go('/home/paciente');
+                                  // Si el medio de pago es PSE, redirigir al flujo de Wompi Sandbox.
+                                  if (_medioPagoSeleccionado == 'PSE') {
+                                    final monto = (_valorConsultaCOP ?? 15000);
+                                    final extra = {
+                                      'montoCOP': monto, // Monto del médico
+                                      'referencia':
+                                          'CITA-${DateTime.now().millisecondsSinceEpoch}',
+                                      // Puedes configurar WOMPI_REDIRECT_URL en .env si deseas capturar el retorno
+                                    };
+                                    final result = await context
+                                        .push('/pago/wompi', extra: extra);
+                                    // Manejo del resultado del flujo Wompi (con polling)
+                                    if (result is Map) {
+                                      final status = (result['status'] ?? '')
+                                          .toString()
+                                          .toUpperCase();
+                                      final txId =
+                                          (result['transactionId'] ?? '')
+                                              .toString();
+
+                                      if (status == 'APPROVED') {
+                                        await showDialog(
+                                          context: context,
+                                          builder: (_) => AlertDialog(
+                                            title: const Text('Pago aprobado'),
+                                            content: Text(
+                                              'Tu pago PSE fue aprobado.${txId.isNotEmpty ? '\nRef: $txId' : ''}',
+                                            ),
+                                          ),
+                                        );
+                                        if (!mounted) return;
+                                        context.go('/home/paciente');
+                                      } else if (status == 'DECLINED') {
+                                        await showDialog(
+                                          context: context,
+                                          builder: (_) => AlertDialog(
+                                            title: const Text('Pago rechazado'),
+                                            content: Text(
+                                              'El pago fue rechazado.${txId.isNotEmpty ? '\nRef: $txId' : ''}',
+                                            ),
+                                          ),
+                                        );
+                                      } else {
+                                        // PENDING u otro estado/timeout
+                                        await showDialog(
+                                          context: context,
+                                          builder: (_) => AlertDialog(
+                                            title: const Text('Pago pendiente'),
+                                            content: Text(
+                                              'Tu pago PSE quedó pendiente de confirmación.${txId.isNotEmpty ? '\nRef: $txId' : ''}',
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  } else {
+                                    // Efectivo: confirmación normal
+                                    await showDialog(
+                                      context: context,
+                                      builder: (_) => const AlertDialog(
+                                        title: Text('Cita solicitada'),
+                                        content: Text(
+                                            'Tu cita fue registrada exitosamente.'),
+                                      ),
+                                    );
+                                    if (!mounted) return;
+                                    context.go('/home/paciente');
+                                  }
+                                  // Nota: para PSE solo navegamos cuando el estado sea APPROVED
                                 } else {
                                   setState(() => errorMessage =
                                       'Error al registrar la cita.');

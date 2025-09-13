@@ -45,7 +45,7 @@ public class CitaController {
     private MedicoRepository medicoRepository;
 
     @PostMapping("create")
-    @PreAuthorize("hasAnyAuthority('ROLE_Administrador', 'ROLE_Medico', 'ROLE_Paciente')")
+    @PreAuthorize("hasAnyAuthority('Administrador','ROLE_Administrador', 'Medico', 'ROLE_Medico', 'Paciente', 'ROLE_Paciente')")
     public ResponseEntity<?> crearCita(@RequestBody Cita cita) {
         try {
             // Guardar la cita
@@ -82,7 +82,7 @@ public class CitaController {
     }
 
     @PutMapping("/citas/{id}/respuesta")
-    @PreAuthorize("hasAuthority('ROLE_Medico')")
+    @PreAuthorize("hasAnyAuthority('Administrador','ROLE_Administrador', 'Medico', 'ROLE_Medico', 'Paciente', 'ROLE_Paciente')")
     public ResponseEntity<?> responderCita(
             @PathVariable Integer id,
             @RequestParam String respuesta) {
