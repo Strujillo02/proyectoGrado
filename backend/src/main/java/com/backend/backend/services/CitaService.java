@@ -16,10 +16,22 @@ public class CitaService {
         return (ArrayList<Cita>)citaRepository.findAll();
     }
 
+    public ArrayList<Cita> obtenerCitaPorMedicoId(Integer medicoId){
+        return citaRepository.findCitaByMedico_Id(medicoId);
+    }
     public Cita guardarCita(Cita cita) {
         return citaRepository.save(cita);
     }
     public void eliminar(Integer id){
         citaRepository.deleteById(id);
+    }
+    
+    public ArrayList<Cita> obtenerCitaPorId_usuario(Integer id){
+        if(citaRepository.findCitaByUsuario_Id(id).isEmpty()){
+            return null;
+        }else {
+            return citaRepository.findCitaByUsuario_Id(id); 
+        }
+        
     }
 }

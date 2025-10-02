@@ -10,4 +10,6 @@ import org.springframework.stereotype.Repository;
 public interface MedicoRepository extends CrudRepository<Medico, Integer> {
     @Query(value = "SELECT m.valor_consulta FROM medicos m WHERE m.usuario_id = :usuarioId LIMIT 1", nativeQuery = true)
     String findValorConsultaByUsuarioId(@Param("usuarioId") int usuarioId);
+
+    Medico findByUsuarioId(int usuarioId);
 }

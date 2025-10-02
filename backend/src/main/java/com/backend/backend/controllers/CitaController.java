@@ -9,6 +9,7 @@ import com.backend.backend.repositories.CitaRepository;
 import com.backend.backend.repositories.MedicoRepository;
 import com.backend.backend.repositories.UsuarioRepository;
 import com.backend.backend.services.CitaService;
+import com.backend.backend.services.MedicoService;
 import com.backend.backend.services.NotificacionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,14 +36,18 @@ public class CitaController {
     private JwtService jwtService;
 
     @Autowired
+    private MedicoService  medicoService;
+
+    @Autowired
     private CitaRepository citaRepository;
     @Autowired
     private NotificacionService notificacionService;
     @Autowired
     private UsuarioRepository usuarioRepository;
-
     @Autowired
     private MedicoRepository medicoRepository;
+
+
 
     @PostMapping("create")
     @PreAuthorize("hasAnyAuthority('Administrador','ROLE_Administrador', 'Medico', 'ROLE_Medico', 'Paciente', 'ROLE_Paciente')")
@@ -79,6 +84,13 @@ public class CitaController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error: " + e.getMessage());
         }
+    }
+
+
+    @GetMapping("/citasporusuario/{id}")
+    @PreAuthorize("hasAnyAuthority('Administrador','ROLE_Administrador', 'Medico', 'ROLE_Medico', 'Paciente', 'ROLE_Paciente')")
+    public ArrayList<Cita> getCitasPorUsuario(@PathVariable int id) {
+        return citaService.obtenerCitaPorId_usuario(id);
     }
 
     @PutMapping("/citas/{id}/respuesta")
@@ -127,6 +139,25 @@ public class CitaController {
                     .body("Error: " + e.getMessage());
         }
     }
+
+    @GetMapping("/get/{id}")
+    @PreAuthorize("hasAnyAuthority('Administrador','ROLE_Administrador', 'Medico', 'ROLE_Medico', 'Paciente', 'ROLE_Paciente')")
+    public ArrayList<Cita> getCitas(@PathVariable int id) {
+        // Interpretamos primero el parámetro como usuario_id para obtener su médico
+        Medico medicoPorUsuario = medicoRepository.findByUsuarioId(id);
+        if (medicoPorUsuario != null) {
+            return citaService.obtenerCitaPorMedicoId(medicoPorUsuario.getId());
+        }
+        // Si no existe médico por usuario, interpretamos el id directamente como medico_id
+        return medicoRepository.findById(id)
+                .map(medico -> citaService.obtenerCitaPorMedicoId(medico.getId()))
+                .orElseGet(ArrayList::new);
+    }
+
+
+
+
+
 /**
     @GetMapping("get")
    // @PreAuthorize("hasAnyAuthority('Paciente', 'Medico', 'Administrador')")
@@ -149,4 +180,3 @@ public class CitaController {
     }
     */
     }
-

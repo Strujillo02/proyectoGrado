@@ -59,7 +59,7 @@ class HomePaciente extends StatelessWidget {
                   height: 50,
                   child: ElevatedButton(
                     onPressed: () {
-                      context.go('/gestionar/especialidades');
+                      context.go('/historial/citasPaciente');
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color.fromRGBO(21, 99, 161, 1),

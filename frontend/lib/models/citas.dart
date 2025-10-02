@@ -40,7 +40,7 @@ class Citas {
         especialidad: Especialidades.fromJson(json['especialidad']),
         fecha_registro: DateTime.parse(json['fecha_registro']),
         motivo_consulta: json['motivo_consulta'],
-        precio: json['precio'],
+        precio: (json['precio'] ?? '0').toString(),
         estado: Citas._normalizeEstado(json['estado']),
         tipo_consulta: json['tipo_consulta'],
         fecha_cita: DateTime.parse(json['fecha_cita']),
@@ -98,5 +98,13 @@ class Citas {
       default:
         return 'Pendiente';
     }
+  }
+
+  // Valor de consulta unificado para UI.
+  // Prioriza el valor configurado por el médico y, si no existe (>0), parsea el campo 'precio'.
+  double get valor_consulta {
+    if (medico.valorConsulta > 0) return medico.valorConsulta;
+    final limpio = precio.toString().replaceAll(RegExp(r'[^0-9.]'), '');
+    return double.tryParse(limpio) ?? 0;
   }
 }

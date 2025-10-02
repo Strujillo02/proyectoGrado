@@ -5,7 +5,9 @@ import 'package:frontend/views/auth/register_page.dart';
 import 'package:frontend/views/especialidades/editarespecialidades_page.dart';
 import 'package:frontend/views/especialidades/especialidades_page.dart';
 import 'package:frontend/views/medicos/editarmedico_page.dart';
+import 'package:frontend/views/medicos/historial_citas.dart';
 import 'package:frontend/views/medicos/home_medico.dart';
+import 'package:frontend/views/pacientes/historial_citas_paciente.dart';
 import 'package:frontend/views/pacientes/home_paciente.dart';
 import 'package:frontend/views/pacientes/solicitar_cita.dart';
 import 'package:frontend/views/pagos/wompi_pse_page.dart';
@@ -55,6 +57,11 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const EspecialidadesManagementPage(),
     ),
     GoRoute(
+      path: '/historial/citasPaciente',
+      name: 'historialCitas',
+      builder: (context, state) => const HistorialCitasPacientePage(),
+    ),
+    GoRoute(
       path: '/home/admin',
       name: 'homeAdmin',
       builder: (context, state) => const HomeAdmin(),
@@ -95,5 +102,10 @@ final GoRouter appRouter = GoRouter(
       name: 'solicitarCita',
       builder: (context, state) => const PedircitaPage(),
     ),
+    GoRoute(
+      path: '/historial/citas',
+      name: 'HistorialCitas',
+      builder: (context, state) => const HistorialCitasPage(),
+    )
   ],
 );

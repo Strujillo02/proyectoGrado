@@ -31,6 +31,38 @@ class CitasService {
     }
   }
 
+    Future<List<Citas>> getCitasPorUsuarioid(int userId) async {
+    final headers = await ApiHelper.getHeadersWithAuth();
+    final uri = Uri.parse('${baseUrl}cita/v1/citasporusuario/$userId');
+    final response = await http.get(uri, headers: headers);
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data is List) {
+        return data.map((e) => Citas.fromJson(e as Map<String, dynamic>)).toList();
+      }
+      throw Exception('Formato inesperado en respuesta de citas por usuario');
+    } else {
+      throw Exception('Error al obtener citas del usuario (code ${response.statusCode})');
+    }
+  }
+
+  /// Obtiene las citas de un usuario específico por su id.
+  /// Endpoint esperado: cita/v1/get/{userId}
+  Future<List<Citas>> getCitasPorUsuario(int userId) async {
+    final headers = await ApiHelper.getHeadersWithAuth();
+    final uri = Uri.parse('${baseUrl}cita/v1/get/$userId');
+    final response = await http.get(uri, headers: headers);
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data is List) {
+        return data.map((e) => Citas.fromJson(e as Map<String, dynamic>)).toList();
+      }
+      throw Exception('Formato inesperado en respuesta de citas por usuario');
+    } else {
+      throw Exception('Error al obtener citas del usuario (code ${response.statusCode})');
+    }
+  }
+
   //! updateCitas
   /// Actualiza una cita en la API.
   /// Recibe un objeto citas

@@ -33,4 +33,8 @@ public class MedicoService {
        int valor = Integer.parseInt(medicoRepository.findValorConsultaByUsuarioId(usuarioId));
        return valor;
     }
+
+    public Medico obtenerMedicoPorUsuarioId(int usuarioId) {
+        return medicoRepository.findByUsuarioId(usuarioId);
+    }
 }
