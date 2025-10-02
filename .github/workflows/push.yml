@@ -3,18 +3,23 @@ name: deploy
 
 jobs:
   deploy:
-    name: deploy to cluster
+    name: proyectoGrado
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@master
+
+      - name: Obtener nombre de repo en minúsculas
+        id: lower_repo
+        run: |
+          echo "repository_lower=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: build and push to docker
         uses: docker/build-push-action@v1
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          repository: ${{ github.repository }}
+          repository: ${{ env.repository_lower }}
           tag_with_ref: true
           tag_with_sha: true
           tags: ${{ github.sha }}
