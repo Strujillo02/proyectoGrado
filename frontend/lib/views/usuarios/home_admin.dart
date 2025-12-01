@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:frontend/widgets/common_appbar.dart';
 
 class HomeAdmin extends StatelessWidget {
   const HomeAdmin({super.key});
@@ -8,10 +9,13 @@ class HomeAdmin extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: const Color.fromRGBO(21, 99, 161, 1),
-        automaticallyImplyLeading: true,
-        elevation: 0,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: CommonAppBar(
+          backgroundColor: const Color.fromRGBO(21, 99, 161, 1),
+          elevation: 0,
+          showBack: false,
+        ),
       ),
       body: SafeArea(
         child: Align(

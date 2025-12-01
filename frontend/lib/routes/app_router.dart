@@ -1,5 +1,4 @@
-import 'package:frontend/models/especialidades.dart';
-import 'package:frontend/models/user.dart';
+// model imports removed (not used here)
 import 'package:frontend/views/auth/login_page.dart';
 import 'package:frontend/views/auth/register_page.dart';
 import 'package:frontend/views/especialidades/editarespecialidades_page.dart';

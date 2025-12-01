@@ -8,6 +8,7 @@ import 'package:frontend/services/especialidades_service.dart';
 import 'package:frontend/services/medico_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
+import 'package:frontend/widgets/common_appbar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PedircitaPage extends StatefulWidget {
@@ -168,16 +169,8 @@ class _PedircitaPageState extends State<PedircitaPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: const Color.fromRGBO(21, 99, 161, 1),
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_rounded,
-            color: Color.fromARGB(255, 215, 215, 218),
-          ),
-          onPressed: () => context.go('/home/paciente'),
-          iconSize: 35,
-        ),
+      appBar: const CommonAppBar(
+        backgroundColor: Color.fromRGBO(21, 99, 161, 1),
         elevation: 0,
       ),
       body: SafeArea(

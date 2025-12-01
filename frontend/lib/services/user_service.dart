@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:frontend/api_helper.dart'; 
+import 'package:frontend/api_helper.dart';
 import 'package:frontend/models/user.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class UserService {
@@ -38,8 +39,8 @@ class UserService {
   Future<bool> updateUsuario(User est) async {
     try {
       final uri = Uri.parse('${baseUrl}user/v1/update');
-      final headers =
-          await ApiHelper.getHeadersWithAuth(); // Incluye Content-Type y Authorization
+      final headers = await ApiHelper
+          .getHeadersWithAuth(); // Incluye Content-Type y Authorization
       final body = jsonEncode(est.toJson()); // Convierte el objeto a JSON
 
       final response = await http.put(uri, headers: headers, body: body);
@@ -57,8 +58,8 @@ class UserService {
   Future<bool> createUsuario(User est) async {
     try {
       final uri = Uri.parse('${baseUrl}user/v1/create');
-      final headers =
-          await ApiHelper.getHeadersWithAuth(); // Incluye Content-Type y Authorization
+      final headers = await ApiHelper
+          .getHeadersWithAuth(); // Incluye Content-Type y Authorization
       final body = jsonEncode(est.toJson()); // Convierte el objeto a JSON
 
       final response = await http.post(uri, headers: headers, body: body);
@@ -86,31 +87,30 @@ class UserService {
         return true;
       } else {
         // Opcional: imprimir body si no fue exitoso
-        print('Error al eliminar: ${response.body}');
+        debugPrint('Error al eliminar: ${response.body}');
         return false;
       }
     } catch (e) {
       throw Exception('Error al eliminar usuario: $e');
     }
   }
-  
+
   //! getUsuarioByIdentificacion
   /// Busca un usuario por su número de identificación.
   Future<User?> getUsuarioByIdentificacion(String identificacion) async {
-  final headers = await ApiHelper.getHeadersWithAuth();
-  final response = await http.get(
-    Uri.parse('${baseUrl}user/v1/getIdentificacion/$identificacion'),
-    headers: headers,
-  );
-  
-  if (response.statusCode == 200) {
-    final json = jsonDecode(response.body);
-    return User.fromJson(json);
-  } else if (response.statusCode == 404) {
-    return null; // No encontrado
-  } else {
-    throw Exception('Error al buscar usuario: ${response.statusCode}');
-  }
-}
+    final headers = await ApiHelper.getHeadersWithAuth();
+    final response = await http.get(
+      Uri.parse('${baseUrl}user/v1/getIdentificacion/$identificacion'),
+      headers: headers,
+    );
 
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      return User.fromJson(json);
+    } else if (response.statusCode == 404) {
+      return null; // No encontrado
+    } else {
+      throw Exception('Error al buscar usuario: ${response.statusCode}');
+    }
+  }
 }

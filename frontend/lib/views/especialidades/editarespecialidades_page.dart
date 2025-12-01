@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/models/especialidades.dart';
-import 'package:frontend/models/user.dart';
 import 'package:frontend/services/especialidades_service.dart';
 import 'package:go_router/go_router.dart';
+import 'package:frontend/widgets/common_appbar.dart';
 
 class EditarEspecialidadesPage extends StatefulWidget {
   final int id;
@@ -42,12 +42,11 @@ class _EditarEspecialidadesPageState extends State<EditarEspecialidadesPage> {
   Future<void> _loadEspecialidad() async {
     try {
       // Obtener el usuario por ID
-      final especialidad = await _especialidadesService
-          .getEspecialidades()
-          .then(
-            (especialidades) =>
-                especialidades.firstWhere((u) => u.id == widget.id),
-          );
+      final especialidad =
+          await _especialidadesService.getEspecialidades().then(
+                (especialidades) =>
+                    especialidades.firstWhere((u) => u.id == widget.id),
+              );
 
       if (!mounted) return;
 
@@ -99,13 +98,15 @@ class _EditarEspecialidadesPageState extends State<EditarEspecialidadesPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: const Text(
-          'Editar Especialidad',
-          style: TextStyle(color: Colors.white),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: CommonAppBar(
+          title: const Center(
+            child: Text('Editar Especialidad',
+                style: TextStyle(color: Colors.white)),
+          ),
+          backgroundColor: const Color.fromRGBO(21, 99, 161, 1),
         ),
-        backgroundColor: const Color.fromRGBO(21, 99, 161, 1),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -113,14 +114,20 @@ class _EditarEspecialidadesPageState extends State<EditarEspecialidadesPage> {
           key: _formKey,
           child: Column(
             children: [
-              buildDropdown('Nombre de especialidad', NombreTipo, [
-                'Médico general', 'Psicólogo', 'Fisioterapeuta'
-              ], (val) => setState(() => NombreTipo = val)),
+              buildDropdown(
+                  'Nombre de especialidad',
+                  NombreTipo,
+                  ['Médico general', 'Psicólogo', 'Fisioterapeuta'],
+                  (val) => setState(() => NombreTipo = val)),
               const SizedBox(height: 20),
-             buildDropdown('Estado', Estado, [
-                'Activo',
-                'Inactivo',
-              ], (val) => setState(() => Estado = val)),
+              buildDropdown(
+                  'Estado',
+                  Estado,
+                  [
+                    'Activo',
+                    'Inactivo',
+                  ],
+                  (val) => setState(() => Estado = val)),
               const SizedBox(height: 20),
               if (errorMessage != null)
                 Text(errorMessage!, style: const TextStyle(color: Colors.red)),

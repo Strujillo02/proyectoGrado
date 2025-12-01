@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/services/auth_service.dart';
+import 'package:frontend/widgets/common_appbar.dart';
 import 'package:go_router/go_router.dart';
 
 class LoginPage extends StatefulWidget {
@@ -63,10 +64,11 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: const Color.fromRGBO(21, 99, 161, 1),
-        automaticallyImplyLeading: false,
+      appBar: const CommonAppBar(
+        backgroundColor: Color.fromRGBO(21, 99, 161, 1),
         elevation: 0,
+        showLogout: false,
+        showBack: false,
       ),
       body: SafeArea(
         top: true,
@@ -106,9 +108,8 @@ class _LoginPageState extends State<LoginPage> {
                           labelText: 'Número de documento*',
                           border: OutlineInputBorder(),
                         ),
-                        validator:
-                            (value) =>
-                                value!.isEmpty ? 'Ingresa tu correo' : null,
+                        validator: (value) =>
+                            value!.isEmpty ? 'Ingresa tu correo' : null,
                       ),
                     ),
                   ),
@@ -123,9 +124,8 @@ class _LoginPageState extends State<LoginPage> {
                           labelText: 'Contraseña*',
                           border: OutlineInputBorder(),
                         ),
-                        validator:
-                            (value) =>
-                                value!.isEmpty ? 'Ingresa tu contraseña' : null,
+                        validator: (value) =>
+                            value!.isEmpty ? 'Ingresa tu contraseña' : null,
                       ),
                     ),
                   ),
@@ -150,13 +150,12 @@ class _LoginPageState extends State<LoginPage> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child:
-                          isLoading
-                              ? const CircularProgressIndicator()
-                              : const Text(
-                                'Iniciar sesión',
-                                style: TextStyle(color: Colors.white),
-                              ),
+                      child: isLoading
+                          ? const CircularProgressIndicator()
+                          : const Text(
+                              'Iniciar sesión',
+                              style: TextStyle(color: Colors.white),
+                            ),
                     ),
                   ),
 

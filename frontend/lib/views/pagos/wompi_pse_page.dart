@@ -7,6 +7,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
+import 'package:frontend/widgets/common_appbar.dart';
 
 class WompiPSEPage extends StatefulWidget {
   const WompiPSEPage({
@@ -75,8 +76,7 @@ class _WompiPSEPageState extends State<WompiPSEPage> {
     final toSign = '$reference$amountInCents$currency$secret';
     final signature = sha256.convert(utf8.encode(toSign)).toString();
     // Debug seguro (no imprime el secreto):
-    // ignore: avoid_print
-    print(
+    debugPrint(
       '[Wompi] firma -> ref="$reference" amount="$amountInCents" currency="$currency" secretLen=${secret.length} hash=${signature.substring(0, 6)}...',
     );
 
@@ -99,9 +99,10 @@ class _WompiPSEPageState extends State<WompiPSEPage> {
 
     final uri = Uri.https('checkout.wompi.co', '/p/', params);
     // Debug visible en logs
-    // ignore: avoid_print
-    print('Wompi URL: $uri');
+    debugPrint('Wompi URL: $uri');
     _lastCheckoutUri = uri;
+
+    // (debug info removed from UI)
 
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -210,7 +211,9 @@ class _WompiPSEPageState extends State<WompiPSEPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Pago PSE (Wompi Sandbox)')),
+      appBar: const CommonAppBar(
+        title: Text('Pago PSE (Wompi Sandbox)'),
+      ),
       body: _error != null
           ? Center(
               child: Padding(

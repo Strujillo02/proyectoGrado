@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/services/auth_service.dart';
 import 'package:go_router/go_router.dart';
+import 'package:frontend/widgets/common_appbar.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -18,7 +19,6 @@ class _RegisterPageState extends State<RegisterPage> {
   final contrasenaController = TextEditingController();
   bool isLoading = false;
   String? errorMessage;
-  
 
   void register() async {
     if (!_formKey.currentState!.validate()) return;
@@ -52,17 +52,12 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: const Color.fromRGBO(21, 99, 161, 1),
-        automaticallyImplyLeading: true,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_rounded,
-            color: Color.fromARGB(255, 215, 215, 218),
-          ),
-          onPressed: () => context.go('/'),
-          iconSize: 35,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: CommonAppBar(
+          backgroundColor: const Color.fromRGBO(21, 99, 161, 1),
+          elevation: 0,
+          fallbackPath: '/',
         ),
       ),
       body: SafeArea(
@@ -100,9 +95,8 @@ class _RegisterPageState extends State<RegisterPage> {
                         labelText: 'Nombre y apellido*',
                         border: OutlineInputBorder(),
                       ),
-                      validator:
-                          (value) =>
-                              value!.isEmpty ? 'Ingresa tu nombre' : null,
+                      validator: (value) =>
+                          value!.isEmpty ? 'Ingresa tu nombre' : null,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -114,9 +108,8 @@ class _RegisterPageState extends State<RegisterPage> {
                         labelText: 'Email*',
                         border: OutlineInputBorder(),
                       ),
-                      validator:
-                          (value) =>
-                              value!.isEmpty ? 'Ingresa tu correo' : null,
+                      validator: (value) =>
+                          value!.isEmpty ? 'Ingresa tu correo' : null,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -147,11 +140,9 @@ class _RegisterPageState extends State<RegisterPage> {
                           _selectedDocumentType = value;
                         });
                       },
-                      validator:
-                          (value) =>
-                              value == null
-                                  ? 'Selecciona un tipo de documento'
-                                  : null,
+                      validator: (value) => value == null
+                          ? 'Selecciona un tipo de documento'
+                          : null,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -163,11 +154,9 @@ class _RegisterPageState extends State<RegisterPage> {
                         labelText: 'Número de documento*',
                         border: OutlineInputBorder(),
                       ),
-                      validator:
-                          (value) =>
-                              value == null || value.isEmpty
-                                  ? 'Ingresa tu número de documento'
-                                  : null,
+                      validator: (value) => value == null || value.isEmpty
+                          ? 'Ingresa tu número de documento'
+                          : null,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -180,11 +169,9 @@ class _RegisterPageState extends State<RegisterPage> {
                         labelText: 'Contraseña*',
                         border: OutlineInputBorder(),
                       ),
-                      validator:
-                          (value) =>
-                              value == null || value.length < 6
-                                  ? 'Mínimo 6 caracteres'
-                                  : null,
+                      validator: (value) => value == null || value.length < 6
+                          ? 'Mínimo 6 caracteres'
+                          : null,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -236,15 +223,14 @@ class _RegisterPageState extends State<RegisterPage> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child:
-                          isLoading
-                              ? const CircularProgressIndicator(
-                                color: Colors.white,
-                              )
-                              : const Text(
-                                'Crear cuenta',
-                                style: TextStyle(color: Colors.white),
-                              ),
+                      child: isLoading
+                          ? const CircularProgressIndicator(
+                              color: Colors.white,
+                            )
+                          : const Text(
+                              'Crear cuenta',
+                              style: TextStyle(color: Colors.white),
+                            ),
                     ),
                   ),
                   const SizedBox(height: 12),

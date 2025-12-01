@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend/api_helper.dart';
 import 'package:frontend/models/medico.dart';
@@ -39,8 +40,7 @@ class MedicoService {
     final uri = Uri.parse('${baseUrl}medico/v1/getValorConsulta/$medicoId');
     final hasAuth = headers['Authorization'] != null &&
         headers['Authorization']!.isNotEmpty;
-    // ignore: avoid_print
-    print('GET ${uri.path} -> Authorization presente: $hasAuth');
+    debugPrint('GET ${uri.path} -> Authorization presente: $hasAuth');
     final resp = await http.get(uri, headers: headers);
     if (resp.statusCode != 200) {
       if (resp.statusCode == 401) {
@@ -143,19 +143,38 @@ class MedicoService {
   /// Recibe un objeto medicos
   /// Devuelve true si la actualización fue exitosa, false en caso contrario.
   Future<bool> updateMedicos(Medico est) async {
+    final uri = Uri.parse('${baseUrl}medico/v1/update');
     try {
-      final uri = Uri.parse('${baseUrl}medico/v1/update');
       final headers = await ApiHelper.getHeadersWithAuth();
 
-      final body = jsonEncode(est.toJson());
+      // Build a compact body for update to avoid sending nested full user object.
+      final bodyMap = {
+        if (est.id != null) 'id': est.id,
+        'especialidad': {'id': est.especialidad.id},
+        'usuario': {'id': est.usuario.id},
+        'estado': est.estado,
+        'tarjetaProfe': est.tarjetaProfe,
+        'valor_consulta': est.valorConsulta,
+      };
+      final body = jsonEncode(bodyMap);
+      debugPrint('MedicoService.updateMedicos -> PUT ${uri.toString()}');
+      debugPrint('Request headers (filtered): ${headers.keys.join(', ')}');
+      debugPrint('Request body: $body');
 
       final response = await http.put(uri, headers: headers, body: body);
 
-      if (response.statusCode != 200) {}
+      if (response.statusCode != 200) {
+        debugPrint(
+            'MedicoService.updateMedicos FAILED -> ${response.statusCode}: ${response.body}');
+        return false;
+      }
 
-      return response.statusCode == 200;
-    } catch (e) {
-      throw Exception('Error al actualizar médicos: $e');
+      debugPrint(
+          'MedicoService.updateMedicos SUCCESS -> ${response.statusCode}');
+      return true;
+    } catch (e, st) {
+      debugPrint('Exception en updateMedicos: $e\n$st');
+      return false;
     }
   }
 
@@ -200,7 +219,7 @@ class MedicoService {
         return true;
       } else {
         // Opcional: imprimir body si no fue exitoso
-        print('Error al eliminar: ${response.body}');
+        debugPrint('Error al eliminar: ${response.body}');
         return false;
       }
     } catch (e) {

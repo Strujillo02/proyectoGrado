@@ -1,5 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+// PopDisposition may not be exported by older SDKs; import internal symbol as
+// fallback so the project compiles while you update Flutter. This is a
+// temporary shim and can be removed once the SDK provides PopDisposition.
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend/routes/app_router.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -7,6 +11,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:frontend/services/citas_service.dart';
 import 'firebase_options.dart';
+import 'dart:async';
 
 // Canal para Android 8+
 const AndroidNotificationChannel _channel = AndroidNotificationChannel(
@@ -18,6 +23,10 @@ const AndroidNotificationChannel _channel = AndroidNotificationChannel(
 
 final FlutterLocalNotificationsPlugin _localNoti =
     FlutterLocalNotificationsPlugin();
+
+// Stream to broadcast notification events that should show an in-app popup.
+final StreamController<Map<String, dynamic>> notificationActionStream =
+    StreamController<Map<String, dynamic>>.broadcast();
 
 // IDs de acciones para notificaciones de Cita
 const String _actionAccept = 'cita_accept';
@@ -108,13 +117,15 @@ void main() async {
 
   // === Logs de verificación del .env ===
   final api = dotenv.env['URL_API'] ?? '';
-  final pk  = dotenv.env['WOMPI_PUBLIC_KEY'] ?? '';
+  final pk = dotenv.env['WOMPI_PUBLIC_KEY'] ?? '';
   final red = dotenv.env['WOMPI_REDIRECT_URL'] ?? '';
   final sec = dotenv.env['WOMPI_INTEGRITY_SECRET'] ?? '';
   debugPrint('[ENV] URL_API=$api');
-  debugPrint('[ENV] WOMPI_PUBLIC_KEY=${pk.isNotEmpty ? pk.substring(0, 12) + '...' : 'EMPTY'}');
+  debugPrint(
+      '[ENV] WOMPI_PUBLIC_KEY=${pk.isNotEmpty ? pk.substring(0, 12) + '...' : 'EMPTY'}');
   debugPrint('[ENV] WOMPI_REDIRECT_URL=${red.isNotEmpty ? red : 'EMPTY'}');
-  debugPrint('[ENV] WOMPI_INTEGRITY_SECRET len=${sec.length} prefixOk=${sec.startsWith('test_integrity_')}');
+  debugPrint(
+      '[ENV] WOMPI_INTEGRITY_SECRET len=${sec.length} prefixOk=${sec.startsWith('test_integrity_')}');
   // =====================================
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -157,6 +168,14 @@ void main() async {
               ),
             ),
           );
+          // Broadcast event so in-app UI can show a popup (mark apiHandled true)
+          notificationActionStream.add({
+            'title': 'Cita actualizada',
+            'body': 'Has aceptado la cita.',
+            'citaId': citaId,
+            'actionId': _actionAccept,
+            'apiHandled': true,
+          });
         } else if (actionId == _actionReject) {
           await CitasService()
               .responderCita(citaId: citaId, respuesta: 'Rechazada');
@@ -175,6 +194,13 @@ void main() async {
               ),
             ),
           );
+          notificationActionStream.add({
+            'title': 'Cita actualizada',
+            'body': 'Has rechazado la cita.',
+            'citaId': citaId,
+            'actionId': _actionReject,
+            'apiHandled': true,
+          });
         }
       } catch (e) {
         debugPrint('Error manejando acción de notificación: $e');
@@ -256,6 +282,18 @@ void main() async {
       ),
       payload: payload,
     );
+    // Broadcast to show in-app popup when a cita notification arrives in foreground
+    if (esCita) {
+      debugPrint(
+          'DEBUG: onMessage preparing to broadcast notificationActionStream for citaId=$citaIdStr');
+      notificationActionStream.add({
+        'title': title,
+        'body': body,
+        'citaId': int.tryParse(citaIdStr),
+        'actionId': null,
+        'apiHandled': false,
+      });
+    }
   });
 
   // Tocado desde bandeja
@@ -270,11 +308,175 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      debugShowCheckedModeBanner: false,
-      title: 'MediHome',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      routerConfig: appRouter,
+    // Use WillPopScope for now to remain compatible with older Flutter SDKs.
+    // The router-first behavior is preserved: prefer appRouter.pop() when
+    // possible so the app's navigation is used instead of exiting the app.
+    //
+    // The PopScope-based implementation is intentionally left commented
+    // below as a reference for when you upgrade the Flutter SDK and want
+    // to enable predictive-back gestures. Replace this WillPopScope with
+    // the PopScope block after upgrading.
+    /*
+    // PopScope-based handler (requires Flutter SDK with PopScope/PopDisposition)
+    return PopScope(
+      onPopInvoked: (invocation) async {
+        try {
+          if (appRouter.canPop()) {
+            appRouter.pop();
+            return PopDisposition.pop;
+          }
+        } catch (_) {
+          final navigator = Navigator.of(context);
+          if (navigator.canPop()) {
+            navigator.pop();
+            return PopDisposition.pop;
+          }
+        }
+        return PopDisposition.none;
+      },
+      child: MaterialApp.router(
+        debugShowCheckedModeBanner: false,
+        title: 'MediHome',
+        theme: ThemeData(primarySwatch: Colors.blue),
+        routerConfig: appRouter,
+      ),
+    );
+    */
+
+    return WillPopScope(
+      onWillPop: () async {
+        try {
+          if (appRouter.canPop()) {
+            appRouter.pop();
+            return false; // we handled the pop
+          }
+        } catch (_) {
+          final navigator = Navigator.of(context);
+          if (navigator.canPop()) {
+            navigator.pop();
+            return false;
+          }
+        }
+        // Nothing to pop: let system handle (exit)
+        return true;
+      },
+      child: NotificationActionHandler(
+        child: MaterialApp.router(
+          debugShowCheckedModeBanner: false,
+          title: 'MediHome',
+          // Use the GoRouter's navigator key so notification callbacks can access
+          // the app navigator context when available.
+          // Note: MaterialApp.router doesn't accept a top-level navigatorKey when
+          // using routerConfig; instead we pull the key from the router below
+          theme: ThemeData(primarySwatch: Colors.blue),
+          routerConfig: appRouter,
+        ),
+      ),
     );
   }
+}
+
+/// Widget that listens to notificationActionStream and shows an in-app popup
+/// with Accept/Reject buttons mirroring the notification actions.
+class NotificationActionHandler extends StatefulWidget {
+  final Widget child;
+  const NotificationActionHandler({required this.child, super.key});
+
+  @override
+  State<NotificationActionHandler> createState() =>
+      _NotificationActionHandlerState();
+}
+
+class _NotificationActionHandlerState extends State<NotificationActionHandler> {
+  StreamSubscription<Map<String, dynamic>>? _sub;
+
+  @override
+  void initState() {
+    super.initState();
+    _sub = notificationActionStream.stream.listen((payload) {
+      debugPrint('DEBUG: NotificationActionHandler received payload: $payload');
+      final title = payload['title']?.toString() ?? 'Notificación';
+      final body = payload['body']?.toString() ?? '';
+      final int? citaId = payload['citaId'] is int
+          ? payload['citaId'] as int
+          : (payload['citaId'] != null
+              ? int.tryParse(payload['citaId'].toString())
+              : null);
+      final apiHandled = payload['apiHandled'] == true;
+
+      final navKey = appRouter.routerDelegate.navigatorKey;
+      // Prefer overlay context, fallback to router's currentContext, then to this State's context.
+      final ctx = navKey.currentState?.overlay?.context ??
+          navKey.currentContext ??
+          context;
+      debugPrint(
+          'DEBUG: Using context $ctx to show in-app dialog (citaId=$citaId, apiHandled=$apiHandled)');
+
+      showDialog<void>(
+        context: ctx,
+        barrierDismissible: true,
+        builder: (c) => AlertDialog(
+          title: Text(title),
+          content: Text(body),
+          actions: [
+            TextButton(
+              onPressed: () async => Navigator.of(c).pop(),
+              child: const Text('Cerrar'),
+            ),
+            TextButton(
+              onPressed: apiHandled || citaId == null
+                  ? null
+                  : () async {
+                      Navigator.of(c).pop();
+                      try {
+                        await CitasService().responderCita(
+                            citaId: citaId, respuesta: 'Rechazada');
+                        notificationActionStream.add({
+                          'title': 'Cita actualizada',
+                          'body': 'Has rechazado la cita.',
+                          'citaId': citaId,
+                          'actionId': _actionReject,
+                          'apiHandled': true,
+                        });
+                      } catch (e) {
+                        debugPrint('Error rechazando desde diálogo: $e');
+                      }
+                    },
+              child: const Text('Rechazar'),
+            ),
+            TextButton(
+              onPressed: apiHandled || citaId == null
+                  ? null
+                  : () async {
+                      Navigator.of(c).pop();
+                      try {
+                        await CitasService().responderCita(
+                            citaId: citaId, respuesta: 'Aceptada');
+                        notificationActionStream.add({
+                          'title': 'Cita actualizada',
+                          'body': 'Has aceptado la cita.',
+                          'citaId': citaId,
+                          'actionId': _actionAccept,
+                          'apiHandled': true,
+                        });
+                      } catch (e) {
+                        debugPrint('Error aceptando desde diálogo: $e');
+                      }
+                    },
+              child: const Text('Aceptar'),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }

@@ -1,11 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:frontend/api_helper.dart';
 import 'package:frontend/models/user.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 
 class AuthService {
   final String baseUrl = dotenv.env['URL_API']!;
@@ -40,6 +37,4 @@ class AuthService {
   }
 
   //! isLoggedIn se encarga de verificar si el usuario está loguea
-
-
 }

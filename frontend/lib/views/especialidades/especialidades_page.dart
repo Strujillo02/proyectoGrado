@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/models/especialidades.dart';
 import 'package:frontend/services/especialidades_service.dart';
 import 'package:go_router/go_router.dart';
+import 'package:frontend/widgets/common_appbar.dart';
 
 class EspecialidadesManagementPage extends StatefulWidget {
   const EspecialidadesManagementPage({super.key});
@@ -107,19 +108,12 @@ class _EspecialidadesManagementPageState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: const Color.fromRGBO(21, 99, 161, 1),
-        automaticallyImplyLeading: true,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_rounded,
-            color: Color.fromARGB(255, 215, 215, 218),
-          ),
-          onPressed:
-              () =>
-                  context.go('/home/admin'), // Regresa a la pantalla principal
-          iconSize: 35,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: CommonAppBar(
+          backgroundColor: const Color.fromRGBO(21, 99, 161, 1),
+          elevation: 0,
+          fallbackPath: '/home/admin',
         ),
       ),
       body: SafeArea(
@@ -181,9 +175,8 @@ class _EspecialidadesManagementPageState
                           onPressed: () {
                             setState(() {
                               currentView = 'listar';
-                              _futureEspecialidades =
-                                  _especialidadesService
-                                      .getEspecialidades(); // Recarga la lista
+                              _futureEspecialidades = _especialidadesService
+                                  .getEspecialidades(); // Recarga la lista
                             });
                           },
                           style: ElevatedButton.styleFrom(
@@ -266,13 +259,12 @@ class _EspecialidadesManagementPageState
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child:
-                  isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
-                        'Crear especialidad',
-                        style: TextStyle(color: Colors.white),
-                      ),
+              child: isLoading
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text(
+                      'Crear especialidad',
+                      style: TextStyle(color: Colors.white),
+                    ),
             ),
           ),
           const SizedBox(height: 20),
@@ -296,10 +288,9 @@ class _EspecialidadesManagementPageState
           border: const OutlineInputBorder(),
         ),
         value: value,
-        items:
-            items
-                .map((item) => DropdownMenuItem(value: item, child: Text(item)))
-                .toList(),
+        items: items
+            .map((item) => DropdownMenuItem(value: item, child: Text(item)))
+            .toList(),
         onChanged: onChanged,
         validator: (value) => value == null ? 'Selecciona una opción' : null,
       ),
@@ -358,23 +349,22 @@ class _EspecialidadesManagementPageState
                       onPressed: () async {
                         final confirm = await showDialog<bool>(
                           context: context,
-                          builder:
-                              (ctx) => AlertDialog(
-                                title: const Text('¿Eliminar especialidad?'),
-                                content: const Text(
-                                  '¿Está seguro que desea eliminar?',
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(ctx, false),
-                                    child: const Text('Cancelar'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(ctx, true),
-                                    child: const Text('Eliminar'),
-                                  ),
-                                ],
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('¿Eliminar especialidad?'),
+                            content: const Text(
+                              '¿Está seguro que desea eliminar?',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: const Text('Cancelar'),
                               ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, true),
+                                child: const Text('Eliminar'),
+                              ),
+                            ],
+                          ),
                         );
                         if (confirm == true) {
                           final eliminado = await _especialidadesService

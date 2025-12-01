@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:frontend/api_helper.dart'; 
+import 'package:flutter/foundation.dart';
+import 'package:frontend/api_helper.dart';
 import 'package:frontend/models/especialidades.dart';
 import 'package:http/http.dart' as http;
 
@@ -30,18 +31,17 @@ class EspecialidadesService {
     }
   }
 
-
   //Método para verificar si una especialidad existe por nombre
   Future<bool> existeEspecialidadConNombre(String nombre) async {
-  try {
-    final especialidades = await getEspecialidades();
+    try {
+      final especialidades = await getEspecialidades();
 
-    return especialidades.any((e) =>
-      e.nombre.toLowerCase().trim() == nombre.toLowerCase().trim());
-  } catch (e) {
-    throw Exception('Error al verificar existencia de especialidad: $e');
+      return especialidades.any(
+          (e) => e.nombre.toLowerCase().trim() == nombre.toLowerCase().trim());
+    } catch (e) {
+      throw Exception('Error al verificar existencia de especialidad: $e');
+    }
   }
-}
 
   //! updateEspecialidades
   /// Actualiza una especialidad en la API.
@@ -50,8 +50,8 @@ class EspecialidadesService {
   Future<bool> updateEspecialidades(Especialidades est) async {
     try {
       final uri = Uri.parse('${baseUrl}especialidad/v1/update');
-      final headers =
-          await ApiHelper.getHeadersWithAuth(); // Incluye Content-Type y Authorization
+      final headers = await ApiHelper
+          .getHeadersWithAuth(); // Incluye Content-Type y Authorization
       final body = jsonEncode(est.toJson()); // Convierte el objeto a JSON
 
       final response = await http.put(uri, headers: headers, body: body);
@@ -69,8 +69,8 @@ class EspecialidadesService {
   Future<bool> createEspecialidades(Especialidades est) async {
     try {
       final uri = Uri.parse('${baseUrl}especialidad/v1/create');
-      final headers =
-          await ApiHelper.getHeadersWithAuth(); // Incluye Content-Type y Authorization
+      final headers = await ApiHelper
+          .getHeadersWithAuth(); // Incluye Content-Type y Authorization
       final body = jsonEncode(est.toJson()); // Convierte el objeto a JSON
 
       final response = await http.post(uri, headers: headers, body: body);
@@ -98,7 +98,7 @@ class EspecialidadesService {
         return true;
       } else {
         // Opcional: imprimir body si no fue exitoso
-        print('Error al eliminar: ${response.body}');
+        debugPrint('Error al eliminar: ${response.body}');
         return false;
       }
     } catch (e) {

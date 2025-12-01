@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:frontend/widgets/common_appbar.dart';
 import 'package:frontend/services/auth_service.dart';
 import 'package:frontend/services/citas_service.dart';
 import 'package:frontend/models/citas.dart';
@@ -18,6 +18,8 @@ class _HistorialCitasPageState extends State<HistorialCitasPage> {
   final _citasService = CitasService();
   final _authService = AuthService();
   List<Citas> _todas = [];
+  final TextEditingController _filterController = TextEditingController();
+  String _filterText = '';
   bool _cargando = true;
   String? _error;
 
@@ -52,19 +54,9 @@ class _HistorialCitasPageState extends State<HistorialCitasPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      // Barra azul solo con flecha blanca para volver al home del médico
-      appBar: AppBar(
-        backgroundColor: const Color.fromRGBO(21, 99, 161, 1),
+      appBar: const CommonAppBar(
+        backgroundColor: Color.fromRGBO(21, 99, 161, 1),
         elevation: 0,
-        automaticallyImplyLeading: false,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            // Cambia la ruta según tu home de médico
-            context.go('/home/medico');
-            // Si no usas go_router: Navigator.of(context).pop();
-          },
-        ),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -85,7 +77,35 @@ class _HistorialCitasPageState extends State<HistorialCitasPage> {
           ),
           const SizedBox(height: 8),
           _segmented(),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: TextField(
+              controller: _filterController,
+              decoration: InputDecoration(
+                hintText: 'Filtrar por paciente, médico, motivo o especialidad',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _filterText.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _filterController.clear();
+                          setState(() {
+                            _filterText = '';
+                          });
+                        },
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+              onChanged: (v) => setState(() => _filterText = v.trim()),
+            ),
+          ),
+          const SizedBox(height: 12),
           Expanded(child: _buildContent()),
         ],
       ),
@@ -179,7 +199,24 @@ class _HistorialCitasPageState extends State<HistorialCitasPage> {
         _todas.where((c) => c.estado.toUpperCase() == 'PENDIENTE').toList();
     final completadas =
         _todas.where((c) => c.estado.toUpperCase() == 'CONFIRMADA').toList();
-    final lista = _tabIndex == 0 ? pendientes : completadas;
+    // Order newest to oldest
+    final baseList = _tabIndex == 0 ? pendientes : completadas;
+    baseList.sort((a, b) => b.fecha_cita.compareTo(a.fecha_cita));
+
+    // Apply filter if present
+    final lista = _filterText.isEmpty
+        ? baseList
+        : baseList.where((c) {
+            final q = _filterText.toLowerCase();
+            final paciente = c.usuario.nombre.toLowerCase();
+            final medico = c.medico.usuario.nombre.toLowerCase();
+            final motivo = c.motivo_consulta.toLowerCase();
+            final esp = c.especialidad.nombre.toLowerCase();
+            return paciente.contains(q) ||
+                medico.contains(q) ||
+                motivo.contains(q) ||
+                esp.contains(q);
+          }).toList();
 
     if (lista.isEmpty) {
       return Center(
@@ -212,9 +249,17 @@ class _HistorialCitasPageState extends State<HistorialCitasPage> {
     final fechaTxt = rawFecha.isNotEmpty
         ? rawFecha[0].toUpperCase() + rawFecha.substring(1)
         : rawFecha;
+    // Set background color based on tipo_consulta
+    final tipoLower = c.tipo_consulta.toLowerCase();
+    final Color cardColor = tipoLower.contains('agend')
+        ? const Color(0xFFfbf9be) // agendada
+        : tipoLower.contains('inmedi')
+            ? const Color(0xFFffc2d2) // inmediata
+            : Colors.white;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(18),
         boxShadow: const [
           BoxShadow(

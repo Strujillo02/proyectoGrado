@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:frontend/widgets/common_appbar.dart';
 
 class HomePaciente extends StatelessWidget {
   const HomePaciente({super.key});
@@ -8,10 +9,13 @@ class HomePaciente extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: const Color.fromRGBO(21, 99, 161, 1),
-        automaticallyImplyLeading: true,
-        elevation: 0,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: CommonAppBar(
+          backgroundColor: const Color.fromRGBO(21, 99, 161, 1),
+          elevation: 0,
+          showBack: false,
+        ),
       ),
       body: SafeArea(
         child: Align(
@@ -39,7 +43,7 @@ class HomePaciente extends StatelessWidget {
                   height: 50,
                   child: ElevatedButton(
                     onPressed: () {
-                      context.go('/solicitar/cita');
+                      context.push('/solicitar/cita');
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color.fromRGBO(21, 99, 161, 1),
@@ -59,7 +63,7 @@ class HomePaciente extends StatelessWidget {
                   height: 50,
                   child: ElevatedButton(
                     onPressed: () {
-                      context.go('/historial/citasPaciente');
+                      context.push('/historial/citasPaciente');
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color.fromRGBO(21, 99, 161, 1),
@@ -79,7 +83,8 @@ class HomePaciente extends StatelessWidget {
                   height: 50,
                   child: ElevatedButton(
                     onPressed: () {
-                      context.go('/usuario/editar/:id');
+                      // Push the edit user route; the actual id should be set when navigating
+                      context.push('/usuario/editar/0');
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color.fromRGBO(21, 99, 161, 1),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/models/user.dart';
 import 'package:frontend/services/user_service.dart';
 import 'package:go_router/go_router.dart';
+import 'package:frontend/widgets/common_appbar.dart';
 
 class EditarUsuarioPage extends StatefulWidget {
   final int id;
@@ -13,15 +14,14 @@ class EditarUsuarioPage extends StatefulWidget {
 }
 
 class _EditarUsuarioPageState extends State<EditarUsuarioPage> {
-   // ! Se inicializa el servicio para obtener los datos del usuario
+  // ! Se inicializa el servicio para obtener los datos del usuario
   // ! Se inicializa el key para el formulario
   //GlobalKey<FormState>() se usa para validar el formulario
   // y para acceder a los datos del formulario
   final _formKey = GlobalKey<FormState>();
-   // Se inicializa el servicio para obtener los datos del usuario
+  // Se inicializa el servicio para obtener los datos del usuario
   // y para actualizar los datos del usuario
   final _userService = UserService();
-
 
   // **Se inicializan los controladores para los campos de texto
 
@@ -46,13 +46,14 @@ class _EditarUsuarioPageState extends State<EditarUsuarioPage> {
     _loadUsuario(); // Cargar datos del usuario al iniciar
   }
 
-   //! loadUsuario
+  //! loadUsuario
   /// Carga los datos del usuario desde la API
   Future<void> _loadUsuario() async {
     try {
       // Obtener el usuario por ID
-      final user = await _userService.getUsuarios()
-        .then((usuarios) => usuarios.firstWhere((u) => u.id == widget.id));
+      final user = await _userService
+          .getUsuarios()
+          .then((usuarios) => usuarios.firstWhere((u) => u.id == widget.id));
 
       if (!mounted) return;
 
@@ -60,7 +61,8 @@ class _EditarUsuarioPageState extends State<EditarUsuarioPage> {
       nombreController = TextEditingController(text: user.nombre);
       emailController = TextEditingController(text: user.email);
       telefonoController = TextEditingController(text: user.telefono ?? '');
-      identificacionController = TextEditingController(text: user.identificacion);
+      identificacionController =
+          TextEditingController(text: user.identificacion);
       direccionController = TextEditingController(text: user.direccion ?? '');
       contrasenaController = TextEditingController(text: user.contrasena ?? '');
 
@@ -104,7 +106,7 @@ class _EditarUsuarioPageState extends State<EditarUsuarioPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Usuario actualizado correctamente')),
       );
-      context.go('/gestionar/usuarios'); // Regresar a la vista anterior
+      context.pop(); // Regresar a la vista anterior
     } else {
       setState(() {
         errorMessage = 'Error al actualizar el usuario';
@@ -119,10 +121,15 @@ class _EditarUsuarioPageState extends State<EditarUsuarioPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: const Text('Editar Usuario',style: TextStyle(color: Colors.white),),
-        backgroundColor: const Color.fromRGBO(21, 99, 161, 1),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: CommonAppBar(
+          title: const Center(
+            child:
+                Text('Editar Usuario', style: TextStyle(color: Colors.white)),
+          ),
+          backgroundColor: const Color.fromRGBO(21, 99, 161, 1),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -142,21 +149,33 @@ class _EditarUsuarioPageState extends State<EditarUsuarioPage> {
               const SizedBox(height: 12),
               buildTextField(contrasenaController, 'Contraseña', obscure: true),
               const SizedBox(height: 12),
-              buildDropdown('Tipo de documento', tipoDocumentoSeleccionado, [
-                'Cedula de ciudadania',
-                'Pasaporte',
-                'Cedula de extranjeria'
-              ], (val) => setState(() => tipoDocumentoSeleccionado = val)),
+              buildDropdown(
+                  'Tipo de documento',
+                  tipoDocumentoSeleccionado,
+                  [
+                    'Cedula de ciudadania',
+                    'Pasaporte',
+                    'Cedula de extranjeria'
+                  ],
+                  (val) => setState(() => tipoDocumentoSeleccionado = val)),
               const SizedBox(height: 12),
-              buildDropdown('Tipo de usuario', tipoUsuarioSeleccionado, [
-                'Paciente',
-                'Medico',
-                'Administrador'
-              ], (val) => setState(() => tipoUsuarioSeleccionado = val)),
+              buildDropdown(
+                  'Tipo de usuario',
+                  tipoUsuarioSeleccionado,
+                  ['Paciente', 'Medico', 'Administrador'],
+                  (val) => setState(() => tipoUsuarioSeleccionado = val)),
               const SizedBox(height: 12),
-              buildDropdown('Género', generoSeleccionado, ['Masculino', 'Femenino'], (val) => setState(() => generoSeleccionado = val)),
+              buildDropdown(
+                  'Género',
+                  generoSeleccionado,
+                  ['Masculino', 'Femenino'],
+                  (val) => setState(() => generoSeleccionado = val)),
               const SizedBox(height: 12),
-              buildDropdown('Estado', estadoSeleccionado, ['Activo', 'Inactivo'], (val) => setState(() => estadoSeleccionado = val)),
+              buildDropdown(
+                  'Estado',
+                  estadoSeleccionado,
+                  ['Activo', 'Inactivo'],
+                  (val) => setState(() => estadoSeleccionado = val)),
               const SizedBox(height: 20),
               if (errorMessage != null)
                 Text(errorMessage!, style: const TextStyle(color: Colors.red)),
@@ -165,7 +184,8 @@ class _EditarUsuarioPageState extends State<EditarUsuarioPage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color.fromRGBO(21, 99, 161, 1),
                 ),
-                child: const Text('Guardar cambios', style: TextStyle(color: Colors.white)),
+                child: const Text('Guardar cambios',
+                    style: TextStyle(color: Colors.white)),
               ),
             ],
           ),
@@ -174,20 +194,26 @@ class _EditarUsuarioPageState extends State<EditarUsuarioPage> {
     );
   }
 
-  Widget buildTextField(TextEditingController controller, String label, {bool obscure = false}) {
+  Widget buildTextField(TextEditingController controller, String label,
+      {bool obscure = false}) {
     return TextFormField(
       controller: controller,
       obscureText: obscure,
-      decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
-      validator: (value) => value == null || value.isEmpty ? 'Este campo es obligatorio' : null,
+      decoration:
+          InputDecoration(labelText: label, border: const OutlineInputBorder()),
+      validator: (value) =>
+          value == null || value.isEmpty ? 'Este campo es obligatorio' : null,
     );
   }
 
-  Widget buildDropdown(String label, String? value, List<String> items, Function(String?) onChanged) {
+  Widget buildDropdown(String label, String? value, List<String> items,
+      Function(String?) onChanged) {
     return DropdownButtonFormField<String>(
       value: value,
-      decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
-      items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+      decoration:
+          InputDecoration(labelText: label, border: const OutlineInputBorder()),
+      items:
+          items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
       onChanged: onChanged,
       validator: (val) => val == null ? 'Seleccione una opción' : null,
     );

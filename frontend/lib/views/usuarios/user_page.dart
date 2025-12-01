@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:frontend/models/especialidades.dart';
 import 'package:frontend/models/medico.dart';
@@ -8,6 +6,7 @@ import 'package:frontend/services/especialidades_service.dart';
 import 'package:frontend/services/medico_service.dart';
 import 'package:frontend/services/user_service.dart';
 import 'package:go_router/go_router.dart';
+import 'package:frontend/widgets/common_appbar.dart';
 
 // Pantalla principal para crear y listar usuarios
 class UserManagementPage extends StatefulWidget {
@@ -39,7 +38,6 @@ class _UserManagementPageState extends State<UserManagementPage> {
   User? usuarioEncontrado;
 
   //Controladores para cada campo de formulario de médico
-  String? _selectedEspecialidad;
   String? _selectedEstadoMedico;
   final tarjetaProfeController = TextEditingController();
 
@@ -104,7 +102,6 @@ class _UserManagementPageState extends State<UserManagementPage> {
     _selectedUserType = null;
     _selectedGenero = null;
     _selectedEstado = null;
-    _selectedEspecialidad = null;
     _especialidadSeleccionada = null;
     _selectedEstadoMedico = null;
     usuarioEncontrado = null;
@@ -203,20 +200,9 @@ class _UserManagementPageState extends State<UserManagementPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: const Color.fromRGBO(21, 99, 161, 1),
-        automaticallyImplyLeading: true,
+      appBar: const CommonAppBar(
+        backgroundColor: Color.fromRGBO(21, 99, 161, 1),
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_rounded,
-            color: Color.fromARGB(255, 215, 215, 218),
-          ),
-          onPressed:
-              () =>
-                  context.go('/home/admin'), // Regresa a la pantalla principal
-          iconSize: 35,
-        ),
       ),
       body: SafeArea(
         child: Align(
@@ -461,13 +447,12 @@ class _UserManagementPageState extends State<UserManagementPage> {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child:
-                  isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
-                        'Crear cuenta',
-                        style: TextStyle(color: Colors.white),
-                      ),
+              child: isLoading
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text(
+                      'Crear cuenta',
+                      style: TextStyle(color: Colors.white),
+                    ),
             ),
           ),
           const SizedBox(height: 20),
@@ -594,17 +579,17 @@ class _UserManagementPageState extends State<UserManagementPage> {
             _cargandoEspecialidades
                 ? const CircularProgressIndicator()
                 : buildDropdownField(
-                  label: 'Especialidad',
-                  value: _especialidadSeleccionada?.nombre,
-                  items: _especialidades.map((e) => e.nombre).toList(),
-                  onChanged: (val) {
-                    setState(() {
-                      _especialidadSeleccionada = _especialidades.firstWhere(
-                        (e) => e.nombre == val,
-                      );
-                    });
-                  },
-                ),
+                    label: 'Especialidad',
+                    value: _especialidadSeleccionada?.nombre,
+                    items: _especialidades.map((e) => e.nombre).toList(),
+                    onChanged: (val) {
+                      setState(() {
+                        _especialidadSeleccionada = _especialidades.firstWhere(
+                          (e) => e.nombre == val,
+                        );
+                      });
+                    },
+                  ),
             const SizedBox(height: 12),
             buildDropdownField(
               label: 'Estado de médico',
@@ -632,13 +617,12 @@ class _UserManagementPageState extends State<UserManagementPage> {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child:
-                  isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
-                        'Crear Médico',
-                        style: TextStyle(color: Colors.white),
-                      ),
+              child: isLoading
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text(
+                      'Crear Médico',
+                      style: TextStyle(color: Colors.white),
+                    ),
             ),
           ),
           const SizedBox(height: 12),
@@ -694,10 +678,9 @@ class _UserManagementPageState extends State<UserManagementPage> {
           border: const OutlineInputBorder(),
         ),
         value: value,
-        items:
-            items
-                .map((item) => DropdownMenuItem(value: item, child: Text(item)))
-                .toList(),
+        items: items
+            .map((item) => DropdownMenuItem(value: item, child: Text(item)))
+            .toList(),
         onChanged: onChanged,
         validator: (value) => value == null ? 'Selecciona una opción' : null,
       ),
@@ -760,23 +743,22 @@ class _UserManagementPageState extends State<UserManagementPage> {
                       onPressed: () async {
                         final confirm = await showDialog<bool>(
                           context: context,
-                          builder:
-                              (ctx) => AlertDialog(
-                                title: const Text('¿Eliminar usuario?'),
-                                content: const Text(
-                                  '¿Está seguro que desea eliminar?',
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(ctx, false),
-                                    child: const Text('Cancelar'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(ctx, true),
-                                    child: const Text('Eliminar'),
-                                  ),
-                                ],
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('¿Eliminar usuario?'),
+                            content: const Text(
+                              '¿Está seguro que desea eliminar?',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: const Text('Cancelar'),
                               ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, true),
+                                child: const Text('Eliminar'),
+                              ),
+                            ],
+                          ),
                         );
                         if (confirm == true) {
                           final eliminado = await _userService.deleteUsuario(
@@ -874,28 +856,27 @@ class _UserManagementPageState extends State<UserManagementPage> {
                       onPressed: () async {
                         final confirm = await showDialog<bool>(
                           context: context,
-                          builder:
-                              (ctx) => AlertDialog(
-                                title: const Text('¿Eliminar usuario?'),
-                                content: const Text(
-                                  '¿Está seguro que desea eliminar?',
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(ctx, false),
-                                    child: const Text('Cancelar'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(ctx, true),
-                                    child: const Text('Eliminar'),
-                                  ),
-                                ],
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('¿Eliminar usuario?'),
+                            content: const Text(
+                              '¿Está seguro que desea eliminar?',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: const Text('Cancelar'),
                               ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, true),
+                                child: const Text('Eliminar'),
+                              ),
+                            ],
+                          ),
                         );
-                       if (confirm == true) {
+                        if (confirm == true) {
                           final eliminado = await _medicoService.deleteMedico(
                             medico.id!,
-                          );//
+                          ); //
                           if (eliminado) {
                             final updateMedicos = _medicoService.getMedicos();
                             setState(() {
@@ -921,7 +902,6 @@ class _UserManagementPageState extends State<UserManagementPage> {
                           }
                         }
                       },
-                      
                     ),
                   ],
                 ),

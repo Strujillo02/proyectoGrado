@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter/foundation.dart';
 import 'package:frontend/api_helper.dart';
 import 'package:frontend/models/citas.dart';
 import 'package:http/http.dart' as http;
@@ -31,18 +32,21 @@ class CitasService {
     }
   }
 
-    Future<List<Citas>> getCitasPorUsuarioid(int userId) async {
+  Future<List<Citas>> getCitasPorUsuarioid(int userId) async {
     final headers = await ApiHelper.getHeadersWithAuth();
     final uri = Uri.parse('${baseUrl}cita/v1/citasporusuario/$userId');
     final response = await http.get(uri, headers: headers);
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data is List) {
-        return data.map((e) => Citas.fromJson(e as Map<String, dynamic>)).toList();
+        return data
+            .map((e) => Citas.fromJson(e as Map<String, dynamic>))
+            .toList();
       }
       throw Exception('Formato inesperado en respuesta de citas por usuario');
     } else {
-      throw Exception('Error al obtener citas del usuario (code ${response.statusCode})');
+      throw Exception(
+          'Error al obtener citas del usuario (code ${response.statusCode})');
     }
   }
 
@@ -55,11 +59,14 @@ class CitasService {
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data is List) {
-        return data.map((e) => Citas.fromJson(e as Map<String, dynamic>)).toList();
+        return data
+            .map((e) => Citas.fromJson(e as Map<String, dynamic>))
+            .toList();
       }
       throw Exception('Formato inesperado en respuesta de citas por usuario');
     } else {
-      throw Exception('Error al obtener citas del usuario (code ${response.statusCode})');
+      throw Exception(
+          'Error al obtener citas del usuario (code ${response.statusCode})');
     }
   }
 
@@ -133,7 +140,7 @@ class CitasService {
         return true;
       } else {
         // Opcional: imprimir body si no fue exitoso
-        print('Error al eliminar: ${response.body}');
+        debugPrint('Error al eliminar: ${response.body}');
         return false;
       }
     } catch (e) {

@@ -257,7 +257,7 @@ class AuthService {
     String? token = await messaging.getToken();
 
     if (token != null) {
-      print("Token del dispositivo: $token");
+      debugPrint("Token del dispositivo: $token");
 
       final response = await http.post(
         Uri.parse('${baseUrl}notificaciones/enviar'),
@@ -270,9 +270,9 @@ class AuthService {
       );
 
       if (response.statusCode == 200) {
-        print("🔥 Notificación enviada desde el backend");
+        debugPrint("🔥 Notificación enviada desde el backend");
       } else {
-        print("❌ Error al enviar notificación: ${response.body}");
+        debugPrint("❌ Error al enviar notificación: ${response.body}");
       }
     }
   }
