@@ -49,6 +49,34 @@ class _CommonAppBarState extends State<CommonAppBar> {
   bool _loadingSwitch = false;
   Medico? _medico;
 
+  String _normalizeRole(String? raw) {
+    final s = (raw ?? '').trim().toLowerCase();
+    if (s.contains('admin')) return 'administrador';
+    if (s.contains('medic')) return 'medico';
+    if (s.contains('pacien')) return 'paciente';
+    return s;
+  }
+
+  Future<String> _resolveHomePathForLoggedUser() async {
+    final auth = AuthService();
+    final user = await auth.getUser();
+    final userType = _normalizeRole(user?.tipo_usuario);
+
+    if (userType == 'administrador') return '/home/admin';
+    if (userType == 'medico') return '/home/medico';
+    if (userType == 'paciente') return '/home/paciente';
+
+    // Fallback secundario por compatibilidad con implementaciones previas.
+    final fallbackType = _normalizeRole(await auth.getUserType());
+    if (fallbackType == 'administrador') return '/home/admin';
+    if (fallbackType == 'medico') return '/home/medico';
+    if (fallbackType == 'paciente') return '/home/paciente';
+
+    if (widget.fallbackPath != null) return widget.fallbackPath!;
+    // Evita enviar al login cuando la flecha de regreso no debe cerrar sesión.
+    return '/home/paciente';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -124,7 +152,10 @@ class _CommonAppBarState extends State<CommonAppBar> {
             direccion: user.direccion,
             token_dispositivo: user.token_dispositivo,
           );
-          final okUser = await userService.updateUsuario(updatedUser);
+          final okUser = await userService.updateUsuario(
+            updatedUser,
+            incluirContrasena: false,
+          );
           if (okUser) {
             if (mounted)
               ScaffoldMessenger.of(context).showSnackBar(
@@ -262,14 +293,10 @@ class _CommonAppBarState extends State<CommonAppBar> {
       leading: widget.showBack
           ? IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () {
-                if (Navigator.of(context).canPop()) {
-                  Navigator.of(context).pop();
-                } else if (widget.fallbackPath != null) {
-                  context.go(widget.fallbackPath!);
-                } else {
-                  context.go('/');
-                }
+              onPressed: () async {
+                final targetPath = await _resolveHomePathForLoggedUser();
+                if (!mounted) return;
+                context.go(targetPath);
               },
             )
           : null,

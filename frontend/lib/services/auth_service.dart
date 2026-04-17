@@ -110,7 +110,10 @@ class AuthService {
 
           try {
             final userService = UserService();
-            final ok = await userService.updateUsuario(updatedUser);
+            final ok = await userService.updateUsuario(
+              updatedUser,
+              incluirContrasena: false,
+            );
 
             if (ok) {
               // Guardar usuario actualizado en SharedPreferences

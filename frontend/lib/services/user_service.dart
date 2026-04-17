@@ -36,12 +36,20 @@ class UserService {
   /// Actualiza un usuario en la API.
   /// Recibe un objeto usuario
   /// Devuelve true si la actualización fue exitosa, false en caso contrario.
-  Future<bool> updateUsuario(User est) async {
+  Future<bool> updateUsuario(
+    User est, {
+    bool incluirContrasena = true,
+  }) async {
     try {
       final uri = Uri.parse('${baseUrl}user/v1/update');
       final headers = await ApiHelper
           .getHeadersWithAuth(); // Incluye Content-Type y Authorization
-      final body = jsonEncode(est.toJson()); // Convierte el objeto a JSON
+      final payload = est.toJson();
+      final contrasena = payload['contrasena']?.toString().trim();
+      if (!incluirContrasena || contrasena == null || contrasena.isEmpty) {
+        payload.remove('contrasena');
+      }
+      final body = jsonEncode(payload); // Convierte el objeto a JSON
 
       final response = await http.put(uri, headers: headers, body: body);
 

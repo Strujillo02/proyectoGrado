@@ -35,6 +35,16 @@ class _WompiPSEPageState extends State<WompiPSEPage> {
   bool _fallingBack = false;
   bool _isSandbox = true;
 
+  bool _isMainFrameError(WebResourceError error) {
+    try {
+      final dynamic maybeMainFrame = (error as dynamic).isForMainFrame;
+      if (maybeMainFrame is bool) return maybeMainFrame;
+    } catch (_) {
+      // Compatibilidad con versiones de webview_flutter sin isForMainFrame.
+    }
+    return true;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -135,6 +145,10 @@ class _WompiPSEPageState extends State<WompiPSEPage> {
             return NavigationDecision.navigate;
           },
           onWebResourceError: (error) async {
+            // En Android WebView pueden fallar recursos secundarios (scripts/pixels)
+            // sin que la página principal haya fallado. Solo tratamos errores del frame principal.
+            if (!_isMainFrameError(error)) return;
+
             final isCsp = error.description.contains('ERR_BLOCKED_BY_CSP') ||
                 error.errorCode == -1;
             if (isCsp && !_fallingBack && _lastCheckoutUri != null) {

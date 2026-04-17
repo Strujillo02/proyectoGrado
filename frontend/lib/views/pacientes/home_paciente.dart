@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/services/auth_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:frontend/widgets/common_appbar.dart';
 
@@ -82,9 +83,21 @@ class HomePaciente extends StatelessWidget {
                   width: 300,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: () {
-                      // Push the edit user route; the actual id should be set when navigating
-                      context.push('/usuario/editar/0');
+                    onPressed: () async {
+                      final user = await AuthService().getUser();
+                      if (!context.mounted) return;
+
+                      if (user?.id == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content:
+                                Text('No se pudo obtener el usuario actual'),
+                          ),
+                        );
+                        return;
+                      }
+
+                      context.push('/usuario/editar/${user!.id}');
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color.fromRGBO(21, 99, 161, 1),

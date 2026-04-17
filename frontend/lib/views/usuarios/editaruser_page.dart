@@ -25,12 +25,13 @@ class _EditarUsuarioPageState extends State<EditarUsuarioPage> {
 
   // **Se inicializan los controladores para los campos de texto
 
-  late TextEditingController nombreController;
-  late TextEditingController emailController;
-  late TextEditingController telefonoController;
-  late TextEditingController identificacionController;
-  late TextEditingController direccionController;
-  late TextEditingController contrasenaController;
+  final TextEditingController nombreController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController telefonoController = TextEditingController();
+  final TextEditingController identificacionController =
+      TextEditingController();
+  final TextEditingController direccionController = TextEditingController();
+  final TextEditingController contrasenaController = TextEditingController();
 
   String? tipoDocumentoSeleccionado;
   String? tipoUsuarioSeleccionado;
@@ -51,20 +52,27 @@ class _EditarUsuarioPageState extends State<EditarUsuarioPage> {
   Future<void> _loadUsuario() async {
     try {
       // Obtener el usuario por ID
-      final user = await _userService
-          .getUsuarios()
-          .then((usuarios) => usuarios.firstWhere((u) => u.id == widget.id));
+      final usuarios = await _userService.getUsuarios();
+      User? user;
+      for (final u in usuarios) {
+        if (u.id == widget.id) {
+          user = u;
+          break;
+        }
+      }
+
+      if (user == null) {
+        throw Exception('Usuario no encontrado con id: ${widget.id}');
+      }
 
       if (!mounted) return;
 
       // Inicializar controladores con los valores del usuario
-      nombreController = TextEditingController(text: user.nombre);
-      emailController = TextEditingController(text: user.email);
-      telefonoController = TextEditingController(text: user.telefono ?? '');
-      identificacionController =
-          TextEditingController(text: user.identificacion);
-      direccionController = TextEditingController(text: user.direccion ?? '');
-      contrasenaController = TextEditingController(text: user.contrasena ?? '');
+      nombreController.text = user.nombre;
+      emailController.text = user.email;
+      telefonoController.text = user.telefono ?? '';
+      identificacionController.text = user.identificacion;
+      direccionController.text = user.direccion ?? '';
 
       tipoDocumentoSeleccionado = user.tipo_identificacion;
       tipoUsuarioSeleccionado = user.tipo_usuario;
@@ -77,10 +85,21 @@ class _EditarUsuarioPageState extends State<EditarUsuarioPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        errorMessage = 'Error al cargar los datos del usuario';
+        errorMessage = 'Error al cargar los datos del usuario: $e';
         _loading = false;
       });
     }
+  }
+
+  @override
+  void dispose() {
+    nombreController.dispose();
+    emailController.dispose();
+    telefonoController.dispose();
+    identificacionController.dispose();
+    direccionController.dispose();
+    contrasenaController.dispose();
+    super.dispose();
   }
 
   Future<void> _guardarCambios() async {
@@ -93,7 +112,9 @@ class _EditarUsuarioPageState extends State<EditarUsuarioPage> {
       telefono: telefonoController.text.trim(),
       identificacion: identificacionController.text.trim(),
       direccion: direccionController.text.trim(),
-      contrasena: contrasenaController.text.trim(),
+      contrasena: contrasenaController.text.trim().isEmpty
+          ? null
+          : contrasenaController.text.trim(),
       tipo_identificacion: tipoDocumentoSeleccionado ?? '',
       tipo_usuario: tipoUsuarioSeleccionado ?? '',
       genero: generoSeleccionado,
@@ -118,6 +139,31 @@ class _EditarUsuarioPageState extends State<EditarUsuarioPage> {
   Widget build(BuildContext context) {
     if (_loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (errorMessage != null && nombreController.text.isEmpty) {
+      return Scaffold(
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(kToolbarHeight),
+          child: CommonAppBar(
+            title: const Center(
+              child:
+                  Text('Editar Usuario', style: TextStyle(color: Colors.white)),
+            ),
+            backgroundColor: const Color.fromRGBO(21, 99, 161, 1),
+          ),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              errorMessage!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.red),
+            ),
+          ),
+        ),
+      );
     }
 
     return Scaffold(
@@ -201,8 +247,17 @@ class _EditarUsuarioPageState extends State<EditarUsuarioPage> {
       obscureText: obscure,
       decoration:
           InputDecoration(labelText: label, border: const OutlineInputBorder()),
-      validator: (value) =>
-          value == null || value.isEmpty ? 'Este campo es obligatorio' : null,
+      validator: (value) {
+        if (label == 'Contraseña') {
+          if (value == null || value.isEmpty) return null;
+          if (value.length < 6) return 'Mínimo 6 caracteres';
+          return null;
+        }
+
+        return value == null || value.isEmpty
+            ? 'Este campo es obligatorio'
+            : null;
+      },
     );
   }
 

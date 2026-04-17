@@ -1,6 +1,8 @@
 package com.backend.backend.models;
 
 
+import java.math.BigDecimal;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -33,6 +35,12 @@ public class Medico {
 
     @Column(name = "valor_consulta", length = 50)
     Integer valor_consulta;
+    
+    @Column(name = "latitud", precision = 9, scale = 6)
+    BigDecimal latitud;
+
+    @Column(name = "longitud", precision = 9, scale = 6)
+    BigDecimal longitud;
 
 
     }

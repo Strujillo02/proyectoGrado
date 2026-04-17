@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:frontend/models/medico.dart';
 import 'package:frontend/services/citas_service.dart';
 import 'package:frontend/services/especialidades_service.dart';
 import 'package:frontend/services/medico_service.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:frontend/widgets/common_appbar.dart';
@@ -20,6 +22,89 @@ class PedircitaPage extends StatefulWidget {
 
 class _PedircitaPageState extends State<PedircitaPage> {
   final _formKey = GlobalKey<FormState>();
+  final _direccionController = TextEditingController();
+  final _numeroViaController = TextEditingController();
+  final _numeroViviendaController = TextEditingController();
+  Timer? _recalculoDebounce;
+
+  static const List<String> _barrios = [
+    'Alameda',
+    'Alvernia',
+    'Americana de Vivienda',
+    'Asoagrin - Farfán',
+    'Bello Horizonte',
+    'Bolívar',
+    'Bosques de Maracaibo',
+    'Buenos Aires',
+    'Céspedes',
+    'Chiminangos',
+    'Ciudad Las Palmas',
+    'Comfamiliar',
+    'Comuneros',
+    'Corazón del Valle',
+    'El Dorado',
+    'El Jazmín',
+    'El Jardín',
+    'El Limonar',
+    'El Palmar',
+    'El Pinar',
+    'El Porvenir',
+    'El Príncipe',
+    'El Refugio',
+    'Entre Ríos',
+    'Estambul',
+    'Fátima',
+    'Flor de la Campana',
+    'Horizonte',
+    'Jorge Eliecer Gaitán',
+    'La Ceiba',
+    'La Esperanza',
+    'La Graciela',
+    'La Herradura',
+    'La Independencia',
+    'La Quinta',
+    'La Rivera',
+    'La Trinidad',
+    'La Villa',
+    'Las Brisas',
+    'Las Delicias',
+    'Lomitas',
+    'Maracaibo',
+    'Marandúa',
+    'Morales',
+    'Municipal',
+    'Peñaranda',
+    'Playas',
+    'Popular',
+    'Primero de Mayo',
+    'Progresar',
+    'Pueblo Nuevo',
+    'Río Paila',
+    'San Antonio',
+    'San Benito',
+    'San Luis',
+    'San Pedro Claver',
+    'Santa Inés',
+    'Santa Isabel',
+    'Santa Rita del Río',
+    'Siete de Agosto',
+    'Sintra',
+    'Victoria',
+    'Villa Colombia',
+    'Villa del Río',
+    'Villanueva',
+  ];
+
+  static const List<String> _tiposVia = [
+    'Avenida',
+    'Carrera',
+    'Calle',
+    'Diagonal',
+    'Kilómetro',
+    'Parque',
+    'Plazoleta',
+    'Transversal',
+  ];
   String _formatCOP(int value) {
     final s = value.toString();
     final withDots = s.replaceAllMapped(
@@ -40,15 +125,21 @@ class _PedircitaPageState extends State<PedircitaPage> {
   List<Medico> _medicos = [];
   Medico? _medicoSeleccionado;
   bool _cargandoMedicos = false;
-  int? _valorConsultaCOP; // precio en COP del médico seleccionado
+  int? _valorBaseConsultaCOP; // valor base en COP del médico seleccionado
+  int? _costoDistanciaCOP; // costo adicional por distancia
+  int? _valorConsultaCOP; // valor total en COP
+  double? _distanciaKm;
+  bool _calculandoValorConsulta = false;
 
   // Campos de formulario
   final motivoConsultaController = TextEditingController();
   final fechaController = TextEditingController(); // yyyy-MM-dd
-  final direccionController = TextEditingController();
   TimeOfDay? _horaSeleccionada;
   String? _tipoConsultaSeleccionado; // 'Inmediata' | 'Agendada'
   String? _medioPagoSeleccionado; // 'Efectivo' | 'PSE'
+  String? _modoDireccionSeleccionado; // 'Ubicación actual' | 'Otra'
+  String? _barrioSeleccionado;
+  String? _tipoViaSeleccionado;
 
   // Ubicación
   double? _latitud;
@@ -58,9 +149,149 @@ class _PedircitaPageState extends State<PedircitaPage> {
   bool isLoading = false;
   String? errorMessage;
 
+  String _googleMapsUrl(double lat, double lon) {
+    return 'https://www.google.com/maps/search/?api=1&query=$lat,$lon';
+  }
+
+  void _actualizarDireccionDesdeGps() {
+    if (_latitud == null || _longitud == null) return;
+    _direccionController.text = _googleMapsUrl(_latitud!, _longitud!);
+  }
+
+  void _programarRecalculoValorConsulta() {
+    _recalculoDebounce?.cancel();
+    _recalculoDebounce = Timer(const Duration(milliseconds: 350), () {
+      if (mounted) {
+        _recalcularValorConsulta();
+      }
+    });
+  }
+
+  Future<(double lat, double lon)?> _obtenerCoordenadasDesdeDireccion(
+    String direccion,
+  ) async {
+    try {
+      final locations = await locationFromAddress(direccion);
+      if (locations.isEmpty) return null;
+      final location = locations.first;
+      return (location.latitude, location.longitude);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _recalcularValorConsulta() async {
+    final base = _valorBaseConsultaCOP;
+    if (!mounted) return;
+
+    if (_medicoSeleccionado == null || base == null) {
+      setState(() {
+        _costoDistanciaCOP = null;
+        _valorConsultaCOP = base;
+        _distanciaKm = null;
+      });
+      return;
+    }
+
+    setState(() => _calculandoValorConsulta = true);
+
+    try {
+      final medicoDireccion = _medicoSeleccionado!.usuario.direccion?.trim();
+      if (medicoDireccion == null || medicoDireccion.isEmpty) {
+        if (!mounted) return;
+        setState(() {
+          _costoDistanciaCOP = null;
+          _valorConsultaCOP = base;
+          _distanciaKm = null;
+        });
+        return;
+      }
+
+      final medicoCoords =
+          await _obtenerCoordenadasDesdeDireccion(medicoDireccion);
+      if (medicoCoords == null) {
+        if (!mounted) return;
+        setState(() {
+          _costoDistanciaCOP = null;
+          _valorConsultaCOP = base;
+          _distanciaKm = null;
+        });
+        return;
+      }
+
+      double? pacienteLat;
+      double? pacienteLon;
+
+      if (_modoDireccionSeleccionado == 'Ubicación actual') {
+        if (_latitud == null || _longitud == null) {
+          await _obtenerUbicacion();
+        }
+        pacienteLat = _latitud;
+        pacienteLon = _longitud;
+      } else if (_modoDireccionSeleccionado == 'Otra') {
+        if (_barrioSeleccionado != null &&
+            _tipoViaSeleccionado != null &&
+            _numeroViaController.text.trim().isNotEmpty &&
+            _numeroViviendaController.text.trim().isNotEmpty) {
+          final direccionManual = _construirDireccionManual();
+          final coords = await _obtenerCoordenadasDesdeDireccion(direccionManual);
+          pacienteLat = coords?.lat;
+          pacienteLon = coords?.lon;
+        }
+      }
+
+      if (pacienteLat == null || pacienteLon == null) {
+        if (!mounted) return;
+        setState(() {
+          _costoDistanciaCOP = null;
+          _valorConsultaCOP = base;
+          _distanciaKm = null;
+        });
+        return;
+      }
+
+      final distanciaMetros = Geolocator.distanceBetween(
+        pacienteLat,
+        pacienteLon,
+        medicoCoords.$1,
+        medicoCoords.$2,
+      );
+      final distanciaKm = distanciaMetros / 1000;
+      final costoDistancia = (distanciaKm * 2000).round();
+
+      if (!mounted) return;
+      setState(() {
+        _distanciaKm = distanciaKm;
+        _costoDistanciaCOP = costoDistancia;
+        _valorConsultaCOP = base + costoDistancia;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _costoDistanciaCOP = null;
+        _valorConsultaCOP = base;
+        _distanciaKm = null;
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _calculandoValorConsulta = false);
+      }
+    }
+  }
+
+  String _construirDireccionManual() {
+    final barrio = (_barrioSeleccionado ?? '').trim();
+    final tipoVia = (_tipoViaSeleccionado ?? '').trim();
+    final numeroVia = _numeroViaController.text.trim();
+    final numeroVivienda = _numeroViviendaController.text.trim();
+    return 'Colombia, Valle del Cauca, Tuluá, $barrio, $tipoVia, $numeroVia, $numeroVivienda';
+  }
+
   @override
   void initState() {
     super.initState();
+    _numeroViaController.addListener(_programarRecalculoValorConsulta);
+    _numeroViviendaController.addListener(_programarRecalculoValorConsulta);
     _cargarEspecialidades();
     _obtenerUbicacion();
   }
@@ -136,7 +367,11 @@ class _PedircitaPageState extends State<PedircitaPage> {
       setState(() {
         _latitud = pos.latitude;
         _longitud = pos.longitude;
+        if (_modoDireccionSeleccionado == 'Ubicación actual') {
+          _actualizarDireccionDesdeGps();
+        }
       });
+      _programarRecalculoValorConsulta();
     } catch (e) {
       // Ignorar y permitir continuar; lat/long quedarán null
     }
@@ -163,6 +398,17 @@ class _PedircitaPageState extends State<PedircitaPage> {
         validator: (value) => value == null ? 'Selecciona una opción' : null,
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _recalculoDebounce?.cancel();
+    motivoConsultaController.dispose();
+    fechaController.dispose();
+    _direccionController.dispose();
+    _numeroViaController.dispose();
+    _numeroViviendaController.dispose();
+    super.dispose();
   }
 
   @override
@@ -251,7 +497,10 @@ class _PedircitaPageState extends State<PedircitaPage> {
                                   onChanged: (val) async {
                                     setState(() {
                                       _medicoSeleccionado = val;
+                                      _valorBaseConsultaCOP = null;
+                                      _costoDistanciaCOP = null;
                                       _valorConsultaCOP = null;
+                                      _distanciaKm = null;
                                     });
                                     if (val?.id != null) {
                                       try {
@@ -263,8 +512,11 @@ class _PedircitaPageState extends State<PedircitaPage> {
                                             .getValorConsultaPorUsuario(
                                                 targetId);
                                         if (!mounted) return;
-                                        setState(
-                                            () => _valorConsultaCOP = precio);
+                                        setState(() {
+                                          _valorBaseConsultaCOP = precio;
+                                          _valorConsultaCOP = precio;
+                                        });
+                                        _programarRecalculoValorConsulta();
                                       } catch (e) {
                                         if (!mounted) return;
                                         setState(() => errorMessage =
@@ -278,26 +530,57 @@ class _PedircitaPageState extends State<PedircitaPage> {
                                 ),
                         ),
                         const SizedBox(height: 16),
-                        if (_valorConsultaCOP != null)
+                        if (_valorBaseConsultaCOP != null)
                           SizedBox(
                             width: 300,
                             child: Card(
                               color: const Color(0xFFF4F6F8),
                               child: Padding(
                                 padding: const EdgeInsets.all(12.0),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text('Valor consulta:',
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.w600)),
-                                    Text(_formatCOP(_valorConsultaCOP!),
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.w700)),
-                                  ].map((w) {
-                                    return w;
-                                  }).toList(),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const Text('Valor cita:',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.w600)),
+                                        if (_calculandoValorConsulta)
+                                          const SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        else
+                                          Text(
+                                            _formatCOP(_valorConsultaCOP ??
+                                                _valorBaseConsultaCOP!),
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.w700),
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Base consulta: ${_formatCOP(_valorBaseConsultaCOP!)}',
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
+                                    if (_distanciaKm != null &&
+                                        _costoDistanciaCOP != null)
+                                      Text(
+                                        'Distancia: ${_distanciaKm!.toStringAsFixed(2)} km x COP 2.000 = ${_formatCOP(_costoDistanciaCOP!)}',
+                                        style: const TextStyle(fontSize: 12),
+                                      )
+                                    else
+                                      const Text(
+                                        'Distancia no calculada aún o ubicación no disponible.',
+                                        style: TextStyle(fontSize: 12),
+                                      ),
+                                  ],
                                 ),
                               ),
                             ),
@@ -388,18 +671,179 @@ class _PedircitaPageState extends State<PedircitaPage> {
                         ],
                         SizedBox(
                           width: 300,
-                          child: TextFormField(
-                            controller: direccionController,
+                          child: DropdownButtonFormField<String>(
                             decoration: const InputDecoration(
                               labelText: 'Dirección*',
                               border: OutlineInputBorder(),
                               prefixIcon: Icon(Icons.location_on_outlined),
                             ),
-                            validator: (value) => value == null || value.isEmpty
-                                ? 'Este campo es obligatorio'
-                                : null,
+                            value: _modoDireccionSeleccionado,
+                            items: const [
+                              DropdownMenuItem(
+                                value: 'Ubicación actual',
+                                child: Text('Ubicación actual'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'Otra',
+                                child: Text('Otra'),
+                              ),
+                            ],
+                            onChanged: (val) async {
+                              setState(() {
+                                _modoDireccionSeleccionado = val;
+                                if (val == 'Otra') {
+                                  _direccionController.clear();
+                                } else {
+                                  _barrioSeleccionado = null;
+                                  _tipoViaSeleccionado = null;
+                                  _numeroViaController.clear();
+                                  _numeroViviendaController.clear();
+                                }
+                              });
+
+                              if (val == 'Ubicación actual') {
+                                if (_latitud == null || _longitud == null) {
+                                  await _obtenerUbicacion();
+                                }
+                                if (!mounted) return;
+                                setState(() {
+                                  _actualizarDireccionDesdeGps();
+                                });
+                                _programarRecalculoValorConsulta();
+                              } else if (val == 'Otra') {
+                                _programarRecalculoValorConsulta();
+                              }
+                            },
+                            validator: (value) =>
+                                value == null ? 'Selecciona una opción' : null,
                           ),
                         ),
+                        const SizedBox(height: 12),
+                        if (_modoDireccionSeleccionado == 'Otra')
+                          Column(
+                            children: [
+                              SizedBox(
+                                width: 300,
+                                child: DropdownButtonFormField<String>(
+                                  decoration: const InputDecoration(
+                                    labelText: 'Barrio*',
+                                    border: OutlineInputBorder(),
+                                    prefixIcon: Icon(Icons.apartment),
+                                  ),
+                                  value: _barrioSeleccionado,
+                                  items: _barrios
+                                      .map(
+                                        (b) => DropdownMenuItem(
+                                          value: b,
+                                          child: Text(b),
+                                        ),
+                                      )
+                                      .toList(),
+                                  onChanged: (val) {
+                                    setState(() => _barrioSeleccionado = val);
+                                    _programarRecalculoValorConsulta();
+                                  },
+                                  validator: (value) {
+                                    if (_modoDireccionSeleccionado != 'Otra') {
+                                      return null;
+                                    }
+                                    return value == null
+                                        ? 'Selecciona un barrio'
+                                        : null;
+                                  },
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                width: 300,
+                                child: DropdownButtonFormField<String>(
+                                  decoration: const InputDecoration(
+                                    labelText: 'Tipo de vía*',
+                                    border: OutlineInputBorder(),
+                                    prefixIcon: Icon(Icons.alt_route),
+                                  ),
+                                  value: _tipoViaSeleccionado,
+                                  items: _tiposVia
+                                      .map(
+                                        (t) => DropdownMenuItem(
+                                          value: t,
+                                          child: Text(t),
+                                        ),
+                                      )
+                                      .toList(),
+                                  onChanged: (val) {
+                                    setState(() => _tipoViaSeleccionado = val);
+                                    _programarRecalculoValorConsulta();
+                                  },
+                                  validator: (value) {
+                                    if (_modoDireccionSeleccionado != 'Otra') {
+                                      return null;
+                                    }
+                                    return value == null
+                                        ? 'Selecciona un tipo de vía'
+                                        : null;
+                                  },
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                width: 300,
+                                child: TextFormField(
+                                  controller: _numeroViaController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Número de vía*',
+                                    border: OutlineInputBorder(),
+                                    prefixIcon: Icon(Icons.pin_outlined),
+                                  ),
+                                  onChanged: (_) =>
+                                      _programarRecalculoValorConsulta(),
+                                  validator: (value) {
+                                    if (_modoDireccionSeleccionado != 'Otra') {
+                                      return null;
+                                    }
+                                    return value == null || value.trim().isEmpty
+                                        ? 'Este campo es obligatorio'
+                                        : null;
+                                  },
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                width: 300,
+                                child: TextFormField(
+                                  controller: _numeroViviendaController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Número de vivienda*',
+                                    border: OutlineInputBorder(),
+                                    prefixIcon: Icon(Icons.home_outlined),
+                                  ),
+                                  onChanged: (_) =>
+                                      _programarRecalculoValorConsulta(),
+                                  validator: (value) {
+                                    if (_modoDireccionSeleccionado != 'Otra') {
+                                      return null;
+                                    }
+                                    return value == null || value.trim().isEmpty
+                                        ? 'Este campo es obligatorio'
+                                        : null;
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        if (_modoDireccionSeleccionado == 'Ubicación actual')
+                          SizedBox(
+                            width: 300,
+                            child: TextFormField(
+                              controller: _direccionController,
+                              readOnly: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Dirección GPS',
+                                border: OutlineInputBorder(),
+                                prefixIcon: Icon(Icons.map_outlined),
+                              ),
+                            ),
+                          ),
                         const SizedBox(height: 16),
                         SizedBox(
                           width: 300,
@@ -469,14 +913,39 @@ class _PedircitaPageState extends State<PedircitaPage> {
                                 }
 
                                 // Ubicación
-                                if (_latitud == null || _longitud == null) {
-                                  await _obtenerUbicacion();
+                                if (_modoDireccionSeleccionado == null) {
+                                  throw Exception('Selecciona una dirección');
+                                }
+
+                                if (_modoDireccionSeleccionado ==
+                                    'Ubicación actual') {
+                                  if (_latitud == null || _longitud == null) {
+                                    await _obtenerUbicacion();
+                                  }
+                                  if (_latitud == null || _longitud == null) {
+                                    throw Exception(
+                                      'No se pudo obtener la ubicación actual',
+                                    );
+                                  }
+                                  _actualizarDireccionDesdeGps();
                                 }
                                 final lat = _latitud ?? 0.0;
                                 final lon = _longitud ?? 0.0;
+                                final direccion = _modoDireccionSeleccionado ==
+                                        'Ubicación actual'
+                                    ? _direccionController.text.trim()
+                                    : _construirDireccionManual();
 
-                                final precio =
-                                    _valorConsultaCOP?.toDouble() ?? 0.0;
+                                if (direccion.isEmpty) {
+                                  throw Exception(
+                                      'La dirección es obligatoria');
+                                }
+
+                                await _recalcularValorConsulta();
+                                final precio = (_valorConsultaCOP ??
+                                    _valorBaseConsultaCOP ??
+                                    0)
+                                  .toDouble();
                                 final ok = await CitasService().crearCitaSimple(
                                   especialidadId:
                                       _especialidadSeleccionada!.id!,
@@ -486,7 +955,7 @@ class _PedircitaPageState extends State<PedircitaPage> {
                                       motivoConsultaController.text.trim(),
                                   tipoConsulta: _tipoConsultaSeleccionado!,
                                   fechaCita: fechaCita,
-                                  direccion: direccionController.text.trim(),
+                                  direccion: direccion,
                                   medioPago: _medioPagoSeleccionado!,
                                   latitud: lat,
                                   longitud: lon,
@@ -518,15 +987,23 @@ class _PedircitaPageState extends State<PedircitaPage> {
                                       if (status == 'APPROVED') {
                                         await showDialog(
                                           context: context,
+                                          barrierDismissible: false,
                                           builder: (_) => AlertDialog(
                                             title: const Text('Pago aprobado'),
                                             content: Text(
-                                              'Tu pago PSE fue aprobado.${txId.isNotEmpty ? '\nRef: $txId' : ''}',
+                                              'Su cita fue aprobada, por favor espere al especialista o el especialista se pondra en contacto con usted.${txId.isNotEmpty ? '\n\nID de transaccion: $txId' : ''}',
                                             ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () =>
+                                                    Navigator.of(context).pop(),
+                                                child: const Text('Aceptar'),
+                                              ),
+                                            ],
                                           ),
                                         );
                                         if (!mounted) return;
-                                        context.go('/home/paciente');
+                                        context.go('/historial/citasPaciente');
                                       } else if (status == 'DECLINED') {
                                         await showDialog(
                                           context: context,
