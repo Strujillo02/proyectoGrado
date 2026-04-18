@@ -9,6 +9,8 @@ class Medico {
   final String tarjetaProfe;
   // Valor de consulta del médico
   final double valorConsulta;
+  final double latitud;
+  final double longitud;
 
   Medico({
     this.id,
@@ -17,6 +19,8 @@ class Medico {
     required this.estado,
     required this.tarjetaProfe,
     this.valorConsulta = 0,
+    required this.latitud,
+    required this.longitud,
   });
 
   // Convierte un objeto JSON a un objeto Medico
@@ -29,6 +33,8 @@ class Medico {
         estado: json['estado'],
         tarjetaProfe: json['tarjetaProfe'] ?? json['tarjeta_profe'] ?? '',
         valorConsulta: _parseValor(json['valor_consulta']),
+        latitud: _parseValor(json['latitud']),
+        longitud: _parseValor(json['longitud']),
       );
 
   // Convierte un objeto Medico a un objeto JSON
@@ -39,6 +45,8 @@ class Medico {
         'estado': estado,
         'tarjetaProfe': tarjetaProfe,
         'valor_consulta': valorConsulta,
+        'latitud': latitud,
+        'longitud': longitud,
       };
 
   static double _parseValor(dynamic v) {

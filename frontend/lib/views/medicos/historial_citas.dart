@@ -41,8 +41,19 @@ class _HistorialCitasPageState extends State<HistorialCitasPage> {
         setState(() => _error = 'No se pudo determinar el usuario logueado');
         return;
       }
-      final lista = await _citasService.getCitasPorUsuario(user!.id!);
-      setState(() => _todas = lista);
+      // Intenta primero con el endpoint específico del usuario
+      try {
+        final lista = await _citasService.getCitasPorUsuario(user!.id!);
+        setState(() => _todas = lista);
+      } catch (e) {
+        // Si falla, obtiene todas las citas y filtra localmente
+        debugPrint('Fallback: obteniendo todas las citas - $e');
+        final todasLasCitas = await _citasService.getCitas();
+        final citasDelUsuario = todasLasCitas
+            .where((cita) => cita.usuario.id == user!.id!)
+            .toList();
+        setState(() => _todas = citasDelUsuario);
+      }
     } catch (e) {
       setState(() => _error = 'Error cargando citas: $e');
     } finally {
@@ -101,18 +112,11 @@ class _HistorialCitasPageState extends State<HistorialCitasPage> {
                 ),
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              ),
-              onChanged: (v) => setState(() => _filterText = v.trim()),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Expanded(child: _buildContent()),
-        ],
-      ),
-    );
-  }
-
-  Widget _segmented() {
+                      final lista = await _citasService.getCitasParaUsuarioConFallback(
+                        userId: user!.id!,
+                        comoMedico: true,
+                      );
+                      setState(() => _todas = lista);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(

@@ -15,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
@@ -50,7 +49,6 @@ public class CitaController {
 
 
     @PostMapping("create")
-    @PreAuthorize("hasAnyAuthority('Administrador','ROLE_Administrador', 'Medico', 'ROLE_Medico', 'Paciente', 'ROLE_Paciente')")
     public ResponseEntity<?> crearCita(@RequestBody Cita cita) {
         try {
             // Guardar la cita
@@ -60,22 +58,26 @@ public class CitaController {
             Optional<Medico> medicoOpt = medicoRepository.findById(citaGuardada.getMedico().getId());
             Optional<Usuario> pacienteOpt = usuarioRepository.findById(citaGuardada.getUsuario().getId());
 
-            if (medicoOpt.isPresent()) {
-                Medico medico = medicoOpt.get();
-                String token = (medico.getUsuario() != null) ? medico.getUsuario().getToken_dispositivo() : null;
+            // La cita ya se guardo; si falla la notificacion no se debe revertir el flujo principal.
+            try {
+                if (medicoOpt.isPresent()) {
+                    Medico medico = medicoOpt.get();
+                    String token = (medico.getUsuario() != null) ? medico.getUsuario().getToken_dispositivo() : null;
 
-                if (token != null && !token.isBlank()) {
-                    String pacienteNombre = pacienteOpt.map(Usuario::getNombre).orElse("");
+                    if (token != null && !token.isBlank()) {
+                        String pacienteNombre = pacienteOpt.map(Usuario::getNombre).orElse("");
 
-                    Map<String, String> data = new HashMap<>();
-                    data.put("citaId", String.valueOf(citaGuardada.getId()));      // <- requerido para los botones
-                    data.put("pacienteNombre", pacienteNombre);                     // <- evita "null" en el cliente
-                    data.put("title", "Solicitud de cita");                         // opcional
-                    data.put("body", "Tienes una solicitud de cita.");              // opcional
+                        Map<String, String> data = new HashMap<>();
+                        data.put("citaId", String.valueOf(citaGuardada.getId()));
+                        data.put("pacienteNombre", pacienteNombre);
+                        data.put("title", "Solicitud de cita");
+                        data.put("body", "Tienes una solicitud de cita.");
 
-                    // Enviar DATA-ONLY (sin Notification) para que Flutter dibuje la notificación con acciones
-                    notificacionService.sendDataToToken(token, data);
+                        notificacionService.sendDataToToken(token, data);
+                    }
                 }
+            } catch (Exception ignored) {
+                // Ignorado intencionalmente para no romper la creacion de la cita.
             }
 
             return ResponseEntity.ok(citaGuardada);
@@ -88,13 +90,11 @@ public class CitaController {
 
 
     @GetMapping("/citasporusuario/{id}")
-    @PreAuthorize("hasAnyAuthority('Administrador','ROLE_Administrador', 'Medico', 'ROLE_Medico', 'Paciente', 'ROLE_Paciente')")
     public ArrayList<Cita> getCitasPorUsuario(@PathVariable int id) {
         return citaService.obtenerCitaPorId_usuario(id);
     }
 
     @PutMapping("/citas/{id}/respuesta")
-    @PreAuthorize("hasAnyAuthority('Administrador','ROLE_Administrador', 'Medico', 'ROLE_Medico', 'Paciente', 'ROLE_Paciente')")
     public ResponseEntity<?> responderCita(
             @PathVariable Integer id,
             @RequestParam String respuesta) {
@@ -141,7 +141,6 @@ public class CitaController {
     }
 
     @GetMapping("/get/{id}")
-    @PreAuthorize("hasAnyAuthority('Administrador','ROLE_Administrador', 'Medico', 'ROLE_Medico', 'Paciente', 'ROLE_Paciente')")
     public ArrayList<Cita> getCitas(@PathVariable int id) {
         // Interpretamos primero el parámetro como usuario_id para obtener su médico
         Medico medicoPorUsuario = medicoRepository.findByUsuarioId(id);
@@ -161,20 +160,20 @@ public class CitaController {
 /**
     @GetMapping("get")
    // @PreAuthorize("hasAnyAuthority('Paciente', 'Medico', 'Administrador')")
-    @PreAuthorize("hasAnyAuthority('ROLE_Administrador', 'ROLE_Medico', 'ROLE_Paciente')")
+    @PreAuthorize("hasAnyRole('Administrador', 'Medico', 'Paciente')")
     public ArrayList<Cita> obtenerCitas() {
         return citaService.obtenerCita();
     }
 
     @DeleteMapping("/delete/{id}")
-    @PreAuthorize("hasAnyAuthority('ROLE_Administrador', 'ROLE_Medico', 'ROLE_Paciente')")
+    @PreAuthorize("hasAnyRole('Administrador', 'Medico', 'Paciente')")
     public String eliminarCita(@PathVariable int id){
         citaService.eliminar(id);
         return "Cita eliminada correctamente";
     }
 
     @PutMapping("/update")
-    @PreAuthorize("hasAnyAuthority('ROLE_Administrador', 'ROLE_Medico', 'ROLE_Paciente')")
+    @PreAuthorize("hasAnyRole('Administrador', 'Medico', 'Paciente')")
     public Cita actualizarCita(@RequestBody Cita cita) {
         return citaService.guardarCita(cita);
     }

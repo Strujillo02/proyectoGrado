@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -7,7 +6,6 @@ import 'package:frontend/models/medico.dart';
 import 'package:frontend/services/citas_service.dart';
 import 'package:frontend/services/especialidades_service.dart';
 import 'package:frontend/services/medico_service.dart';
-import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:frontend/widgets/common_appbar.dart';
@@ -21,11 +19,11 @@ class PedircitaPage extends StatefulWidget {
 }
 
 class _PedircitaPageState extends State<PedircitaPage> {
+  static const int _tarifaPorKmCOP = 2000;
   final _formKey = GlobalKey<FormState>();
   final _direccionController = TextEditingController();
   final _numeroViaController = TextEditingController();
   final _numeroViviendaController = TextEditingController();
-  Timer? _recalculoDebounce;
 
   static const List<String> _barrios = [
     'Alameda',
@@ -125,11 +123,10 @@ class _PedircitaPageState extends State<PedircitaPage> {
   List<Medico> _medicos = [];
   Medico? _medicoSeleccionado;
   bool _cargandoMedicos = false;
-  int? _valorBaseConsultaCOP; // valor base en COP del médico seleccionado
-  int? _costoDistanciaCOP; // costo adicional por distancia
-  int? _valorConsultaCOP; // valor total en COP
+  int? _valorBaseConsultaCOP; // precio base del médico
+  int? _valorConsultaCOP; // total (base + distancia)
+  int? _costoDistanciaCOP;
   double? _distanciaKm;
-  bool _calculandoValorConsulta = false;
 
   // Campos de formulario
   final motivoConsultaController = TextEditingController();
@@ -158,125 +155,49 @@ class _PedircitaPageState extends State<PedircitaPage> {
     _direccionController.text = _googleMapsUrl(_latitud!, _longitud!);
   }
 
-  void _programarRecalculoValorConsulta() {
-    _recalculoDebounce?.cancel();
-    _recalculoDebounce = Timer(const Duration(milliseconds: 350), () {
-      if (mounted) {
-        _recalcularValorConsulta();
-      }
-    });
-  }
-
-  Future<(double lat, double lon)?> _obtenerCoordenadasDesdeDireccion(
-    String direccion,
-  ) async {
-    try {
-      final locations = await locationFromAddress(direccion);
-      if (locations.isEmpty) return null;
-      final location = locations.first;
-      return (location.latitude, location.longitude);
-    } catch (_) {
-      return null;
-    }
-  }
-
   Future<void> _recalcularValorConsulta() async {
+    final medico = _medicoSeleccionado;
     final base = _valorBaseConsultaCOP;
-    if (!mounted) return;
-
-    if (_medicoSeleccionado == null || base == null) {
+    if (medico == null || base == null) {
+      if (!mounted) return;
       setState(() {
+        _distanciaKm = null;
         _costoDistanciaCOP = null;
         _valorConsultaCOP = base;
-        _distanciaKm = null;
       });
       return;
     }
 
-    setState(() => _calculandoValorConsulta = true);
+    if (_latitud == null || _longitud == null) {
+      await _obtenerUbicacion();
+    }
 
-    try {
-      final medicoDireccion = _medicoSeleccionado!.usuario.direccion?.trim();
-      if (medicoDireccion == null || medicoDireccion.isEmpty) {
-        if (!mounted) return;
-        setState(() {
-          _costoDistanciaCOP = null;
-          _valorConsultaCOP = base;
-          _distanciaKm = null;
-        });
-        return;
-      }
-
-      final medicoCoords =
-          await _obtenerCoordenadasDesdeDireccion(medicoDireccion);
-      if (medicoCoords == null) {
-        if (!mounted) return;
-        setState(() {
-          _costoDistanciaCOP = null;
-          _valorConsultaCOP = base;
-          _distanciaKm = null;
-        });
-        return;
-      }
-
-      double? pacienteLat;
-      double? pacienteLon;
-
-      if (_modoDireccionSeleccionado == 'Ubicación actual') {
-        if (_latitud == null || _longitud == null) {
-          await _obtenerUbicacion();
-        }
-        pacienteLat = _latitud;
-        pacienteLon = _longitud;
-      } else if (_modoDireccionSeleccionado == 'Otra') {
-        if (_barrioSeleccionado != null &&
-            _tipoViaSeleccionado != null &&
-            _numeroViaController.text.trim().isNotEmpty &&
-            _numeroViviendaController.text.trim().isNotEmpty) {
-          final direccionManual = _construirDireccionManual();
-          final coords = await _obtenerCoordenadasDesdeDireccion(direccionManual);
-          pacienteLat = coords?.lat;
-          pacienteLon = coords?.lon;
-        }
-      }
-
-      if (pacienteLat == null || pacienteLon == null) {
-        if (!mounted) return;
-        setState(() {
-          _costoDistanciaCOP = null;
-          _valorConsultaCOP = base;
-          _distanciaKm = null;
-        });
-        return;
-      }
-
-      final distanciaMetros = Geolocator.distanceBetween(
-        pacienteLat,
-        pacienteLon,
-        medicoCoords.$1,
-        medicoCoords.$2,
-      );
-      final distanciaKm = distanciaMetros / 1000;
-      final costoDistancia = (distanciaKm * 2000).round();
-
+    if (_latitud == null || _longitud == null) {
       if (!mounted) return;
       setState(() {
-        _distanciaKm = distanciaKm;
-        _costoDistanciaCOP = costoDistancia;
-        _valorConsultaCOP = base + costoDistancia;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
+        _distanciaKm = null;
         _costoDistanciaCOP = null;
         _valorConsultaCOP = base;
-        _distanciaKm = null;
       });
-    } finally {
-      if (mounted) {
-        setState(() => _calculandoValorConsulta = false);
-      }
+      return;
     }
+
+    final distanciaMetros = Geolocator.distanceBetween(
+      _latitud!,
+      _longitud!,
+      medico.latitud,
+      medico.longitud,
+    );
+    final distanciaKm = distanciaMetros / 1000;
+    final costoDistancia = (distanciaKm * _tarifaPorKmCOP).round();
+    final total = base + costoDistancia;
+
+    if (!mounted) return;
+    setState(() {
+      _distanciaKm = distanciaKm;
+      _costoDistanciaCOP = costoDistancia;
+      _valorConsultaCOP = total;
+    });
   }
 
   String _construirDireccionManual() {
@@ -290,8 +211,6 @@ class _PedircitaPageState extends State<PedircitaPage> {
   @override
   void initState() {
     super.initState();
-    _numeroViaController.addListener(_programarRecalculoValorConsulta);
-    _numeroViviendaController.addListener(_programarRecalculoValorConsulta);
     _cargarEspecialidades();
     _obtenerUbicacion();
   }
@@ -318,7 +237,10 @@ class _PedircitaPageState extends State<PedircitaPage> {
       _cargandoMedicos = true;
       _medicos = [];
       _medicoSeleccionado = null;
+      _valorBaseConsultaCOP = null;
       _valorConsultaCOP = null;
+      _distanciaKm = null;
+      _costoDistanciaCOP = null;
     });
     try {
       final lista = await _medicoService.getMedicos();
@@ -371,7 +293,7 @@ class _PedircitaPageState extends State<PedircitaPage> {
           _actualizarDireccionDesdeGps();
         }
       });
-      _programarRecalculoValorConsulta();
+      await _recalcularValorConsulta();
     } catch (e) {
       // Ignorar y permitir continuar; lat/long quedarán null
     }
@@ -402,7 +324,6 @@ class _PedircitaPageState extends State<PedircitaPage> {
 
   @override
   void dispose() {
-    _recalculoDebounce?.cancel();
     motivoConsultaController.dispose();
     fechaController.dispose();
     _direccionController.dispose();
@@ -498,9 +419,9 @@ class _PedircitaPageState extends State<PedircitaPage> {
                                     setState(() {
                                       _medicoSeleccionado = val;
                                       _valorBaseConsultaCOP = null;
-                                      _costoDistanciaCOP = null;
                                       _valorConsultaCOP = null;
                                       _distanciaKm = null;
+                                      _costoDistanciaCOP = null;
                                     });
                                     if (val?.id != null) {
                                       try {
@@ -516,7 +437,7 @@ class _PedircitaPageState extends State<PedircitaPage> {
                                           _valorBaseConsultaCOP = precio;
                                           _valorConsultaCOP = precio;
                                         });
-                                        _programarRecalculoValorConsulta();
+                                        await _recalcularValorConsulta();
                                       } catch (e) {
                                         if (!mounted) return;
                                         setState(() => errorMessage =
@@ -530,7 +451,7 @@ class _PedircitaPageState extends State<PedircitaPage> {
                                 ),
                         ),
                         const SizedBox(height: 16),
-                        if (_valorBaseConsultaCOP != null)
+                        if (_valorConsultaCOP != null)
                           SizedBox(
                             width: 300,
                             child: Card(
@@ -547,38 +468,21 @@ class _PedircitaPageState extends State<PedircitaPage> {
                                         const Text('Valor cita:',
                                             style: TextStyle(
                                                 fontWeight: FontWeight.w600)),
-                                        if (_calculandoValorConsulta)
-                                          const SizedBox(
-                                            width: 18,
-                                            height: 18,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                            ),
-                                          )
-                                        else
-                                          Text(
-                                            _formatCOP(_valorConsultaCOP ??
-                                                _valorBaseConsultaCOP!),
+                                        Text(_formatCOP(_valorConsultaCOP!),
                                             style: const TextStyle(
-                                                fontWeight: FontWeight.w700),
-                                          ),
+                                                fontWeight: FontWeight.w700)),
                                       ],
                                     ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'Base consulta: ${_formatCOP(_valorBaseConsultaCOP!)}',
-                                      style: const TextStyle(fontSize: 12),
-                                    ),
+                                    if (_valorBaseConsultaCOP != null)
+                                      Text(
+                                        'Base: ${_formatCOP(_valorBaseConsultaCOP!)}',
+                                        style: const TextStyle(fontSize: 12),
+                                      ),
                                     if (_distanciaKm != null &&
                                         _costoDistanciaCOP != null)
                                       Text(
                                         'Distancia: ${_distanciaKm!.toStringAsFixed(2)} km x COP 2.000 = ${_formatCOP(_costoDistanciaCOP!)}',
                                         style: const TextStyle(fontSize: 12),
-                                      )
-                                    else
-                                      const Text(
-                                        'Distancia no calculada aún o ubicación no disponible.',
-                                        style: TextStyle(fontSize: 12),
                                       ),
                                   ],
                                 ),
@@ -709,9 +613,7 @@ class _PedircitaPageState extends State<PedircitaPage> {
                                 setState(() {
                                   _actualizarDireccionDesdeGps();
                                 });
-                                _programarRecalculoValorConsulta();
-                              } else if (val == 'Otra') {
-                                _programarRecalculoValorConsulta();
+                                await _recalcularValorConsulta();
                               }
                             },
                             validator: (value) =>
@@ -741,7 +643,6 @@ class _PedircitaPageState extends State<PedircitaPage> {
                                       .toList(),
                                   onChanged: (val) {
                                     setState(() => _barrioSeleccionado = val);
-                                    _programarRecalculoValorConsulta();
                                   },
                                   validator: (value) {
                                     if (_modoDireccionSeleccionado != 'Otra') {
@@ -773,7 +674,6 @@ class _PedircitaPageState extends State<PedircitaPage> {
                                       .toList(),
                                   onChanged: (val) {
                                     setState(() => _tipoViaSeleccionado = val);
-                                    _programarRecalculoValorConsulta();
                                   },
                                   validator: (value) {
                                     if (_modoDireccionSeleccionado != 'Otra') {
@@ -795,8 +695,6 @@ class _PedircitaPageState extends State<PedircitaPage> {
                                     border: OutlineInputBorder(),
                                     prefixIcon: Icon(Icons.pin_outlined),
                                   ),
-                                  onChanged: (_) =>
-                                      _programarRecalculoValorConsulta(),
                                   validator: (value) {
                                     if (_modoDireccionSeleccionado != 'Otra') {
                                       return null;
@@ -817,8 +715,6 @@ class _PedircitaPageState extends State<PedircitaPage> {
                                     border: OutlineInputBorder(),
                                     prefixIcon: Icon(Icons.home_outlined),
                                   ),
-                                  onChanged: (_) =>
-                                      _programarRecalculoValorConsulta(),
                                   validator: (value) {
                                     if (_modoDireccionSeleccionado != 'Otra') {
                                       return null;
@@ -942,10 +838,8 @@ class _PedircitaPageState extends State<PedircitaPage> {
                                 }
 
                                 await _recalcularValorConsulta();
-                                final precio = (_valorConsultaCOP ??
-                                    _valorBaseConsultaCOP ??
-                                    0)
-                                  .toDouble();
+                                final precio =
+                                    (_valorConsultaCOP ?? 0).toDouble();
                                 final ok = await CitasService().crearCitaSimple(
                                   especialidadId:
                                       _especialidadSeleccionada!.id!,

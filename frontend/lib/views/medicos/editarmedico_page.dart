@@ -29,6 +29,8 @@ class _EditarMedicoPageState extends State<EditarMedicoPage> {
   final TextEditingController direccionController = TextEditingController();
   final TextEditingController contrasenaController = TextEditingController();
   final TextEditingController tarjetaProfeController = TextEditingController();
+  final TextEditingController latitudController = TextEditingController();
+  final TextEditingController longitudController = TextEditingController();
 
   String? _selectedEstadoMedico;
   String? _selectedDocumentType;
@@ -86,6 +88,8 @@ class _EditarMedicoPageState extends State<EditarMedicoPage> {
       direccionController.text = medico.usuario.direccion ?? '';
       contrasenaController.text = medico.usuario.contrasena ?? '';
       tarjetaProfeController.text = medico.tarjetaProfe;
+      latitudController.text = medico.latitud.toString();
+      longitudController.text = medico.longitud.toString();
       _especialidadSeleccionada = medico.especialidad;
       _selectedEstadoMedico = medico.estado;
       _selectedDocumentType = medico.usuario.tipo_identificacion;
@@ -125,6 +129,9 @@ class _EditarMedicoPageState extends State<EditarMedicoPage> {
       ),
       estado: _selectedEstadoMedico ?? 'Activo',
       tarjetaProfe: tarjetaProfeController.text.trim(),
+      valorConsulta: _medicoOriginal!.valorConsulta,
+      latitud: double.tryParse(latitudController.text.trim()) ?? 0,
+      longitud: double.tryParse(longitudController.text.trim()) ?? 0,
     );
 
     final success = await _medicoService.updateMedicos(medicoEditado);
@@ -150,6 +157,8 @@ class _EditarMedicoPageState extends State<EditarMedicoPage> {
     direccionController.dispose();
     contrasenaController.dispose();
     tarjetaProfeController.dispose();
+    latitudController.dispose();
+    longitudController.dispose();
     super.dispose();
   }
 
@@ -277,6 +286,10 @@ class _EditarMedicoPageState extends State<EditarMedicoPage> {
               ),
               const SizedBox(height: 12),
               buildTextField(tarjetaProfeController, 'Tarjeta profesional'),
+              const SizedBox(height: 12),
+              buildTextField(latitudController, 'Latitud'),
+              const SizedBox(height: 12),
+              buildTextField(longitudController, 'Longitud'),
               const SizedBox(height: 20),
               if (errorMessage != null)
                 Text(errorMessage!, style: const TextStyle(color: Colors.red)),

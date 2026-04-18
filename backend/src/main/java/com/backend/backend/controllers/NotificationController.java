@@ -18,7 +18,7 @@ public class NotificationController {
     private final NotificacionService notificacionService;
 
     @PostMapping("/test")
-    @PreAuthorize("hasAnyAuthority('ROLE_Administrador','ROLE_Medico','ROLE_Paciente')") // o quítalo si quieres público
+    @PreAuthorize("hasAnyRole('Administrador', 'Medico', 'Paciente')") // o quítalo si quieres público
     public ResponseEntity<?> sendTest(@RequestBody PushNotificationRequest req) {
         try {
             if (req.getToken() == null || req.getToken().isBlank())

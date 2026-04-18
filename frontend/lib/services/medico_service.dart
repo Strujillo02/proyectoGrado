@@ -155,6 +155,8 @@ class MedicoService {
         'estado': est.estado,
         'tarjetaProfe': est.tarjetaProfe,
         'valor_consulta': est.valorConsulta,
+        'latitud': est.latitud,
+        'longitud': est.longitud,
       };
       final body = jsonEncode(bodyMap);
       debugPrint('MedicoService.updateMedicos -> PUT ${uri.toString()}');
@@ -192,6 +194,9 @@ class MedicoService {
         'usuario': {'id': est.usuario.id},
         'estado': est.estado,
         'tarjetaProfe': est.tarjetaProfe,
+        'valor_consulta': est.valorConsulta,
+        'latitud': est.latitud,
+        'longitud': est.longitud,
       });
 
       final response = await http.post(uri, headers: headers, body: body);

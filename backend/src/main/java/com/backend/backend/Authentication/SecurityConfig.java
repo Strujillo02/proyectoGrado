@@ -30,27 +30,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
-
-                        // Usuarios
-                        .requestMatchers("/user/v1/delete/**").hasAuthority("Administrador")
-                        .requestMatchers("/user/v1/update").authenticated()
-
-                        // Especialidad
-                        .requestMatchers("/especialidad/v1/create").hasAuthority("Administrador")
-                        .requestMatchers("/especialidad/v1/delete/**").hasAuthority("Administrador")
-                        .requestMatchers("/especialidad/v1/update").hasAuthority("Administrador")
-
-                        // Médico
-                        .requestMatchers("/medico/v1/create").hasAuthority("Administrador")
-                        .requestMatchers("/medico/v1/update").hasAuthority("Administrador")
-                        .requestMatchers("/medico/v1/delete/**").hasAuthority("Administrador")
-                        .requestMatchers("/medico/v1/getValorConsulta/**")
-                        .hasAnyAuthority("Administrador","ROLE_Administrador", "Medico", "ROLE_Medico", "Paciente", "ROLE_Paciente")
-
-                        // Citas y notificaciones
-                        .requestMatchers("/cita/**").hasAnyAuthority("Administrador","ROLE_Administrador", "Medico", "ROLE_Medico", "Paciente", "ROLE_Paciente")
-                        .requestMatchers("/notificaciones/**").hasAnyAuthority("Administrador","Paciente","Medico")
-
+                    .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

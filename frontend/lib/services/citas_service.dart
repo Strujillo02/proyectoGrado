@@ -10,32 +10,7 @@ class CitasService {
   //! se inicializa dotenv para cargar las variables de entorno
   final String baseUrl = dotenv.env['URL_API']!;
 
-  //! getCitas
-  /// Obtiene una lista de citas desde la API.
-  Future<List<Citas>> getCitas() async {
-    final headers = await ApiHelper.getHeadersWithAuth();
-
-    final response = await http.get(
-      Uri.parse('${baseUrl}citas/v1/get'),
-      headers: headers,
-    );
-
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(
-        response.body,
-      ); // Es directamente una lista
-      return data.map((item) => Citas.fromJson(item)).toList();
-    } else {
-      throw Exception(
-        'Error al cargar Citas. Código: ${response.statusCode}',
-      );
-    }
-  }
-
-  Future<List<Citas>> getCitasPorUsuarioid(int userId) async {
-    final headers = await ApiHelper.getHeadersWithAuth();
-    final uri = Uri.parse('${baseUrl}cita/v1/citasporusuario/$userId');
-    final response = await http.get(uri, headers: headers);
+  Future<List<Citas>> _parseCitasResponse(http.Response response) async {
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data is List) {
@@ -43,8 +18,40 @@ class CitasService {
             .map((e) => Citas.fromJson(e as Map<String, dynamic>))
             .toList();
       }
-      throw Exception('Formato inesperado en respuesta de citas por usuario');
-    } else {
+      throw Exception('Formato inesperado en respuesta de citas');
+    }
+    throw Exception('HTTP ${response.statusCode}');
+  }
+
+  //! getCitas
+  /// Obtiene una lista de citas desde la API.
+  Future<List<Citas>> getCitas() async {
+    final headers = await ApiHelper.getHeadersWithAuth();
+
+    // Algunos backends exponen citas/v1/get, otros cita/v1/get.
+    final endpoints = <String>['citas/v1/get', 'cita/v1/get'];
+    final errores = <String>[];
+
+    for (final ep in endpoints) {
+      try {
+        final response =
+            await http.get(Uri.parse('${baseUrl}$ep'), headers: headers);
+        return await _parseCitasResponse(response);
+      } catch (e) {
+        errores.add('$ep -> $e');
+      }
+    }
+
+    throw Exception('Error al cargar citas. Intentos: ${errores.join(' | ')}');
+  }
+
+  Future<List<Citas>> getCitasPorUsuarioid(int userId) async {
+    final headers = await ApiHelper.getHeadersWithAuth();
+    final uri = Uri.parse('${baseUrl}cita/v1/citasporusuario/$userId');
+    final response = await http.get(uri, headers: headers);
+    try {
+      return await _parseCitasResponse(response);
+    } catch (_) {
       throw Exception(
           'Error al obtener citas del usuario (code ${response.statusCode})');
     }
@@ -56,18 +63,47 @@ class CitasService {
     final headers = await ApiHelper.getHeadersWithAuth();
     final uri = Uri.parse('${baseUrl}cita/v1/get/$userId');
     final response = await http.get(uri, headers: headers);
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      if (data is List) {
-        return data
-            .map((e) => Citas.fromJson(e as Map<String, dynamic>))
-            .toList();
-      }
-      throw Exception('Formato inesperado en respuesta de citas por usuario');
-    } else {
+    try {
+      return await _parseCitasResponse(response);
+    } catch (_) {
       throw Exception(
           'Error al obtener citas del usuario (code ${response.statusCode})');
     }
+  }
+
+  /// Carga citas visibles para un usuario intentando varios endpoints.
+  /// Si los endpoints por usuario fallan (403/404), usa getCitas() y filtra localmente.
+  Future<List<Citas>> getCitasParaUsuarioConFallback({
+    required int userId,
+    required bool comoMedico,
+  }) async {
+    final errores = <String>[];
+
+    try {
+      return await getCitasPorUsuario(userId);
+    } catch (e) {
+      errores.add('cita/v1/get/$userId -> $e');
+    }
+
+    try {
+      return await getCitasPorUsuarioid(userId);
+    } catch (e) {
+      errores.add('cita/v1/citasporusuario/$userId -> $e');
+    }
+
+    try {
+      final todas = await getCitas();
+      return todas.where((cita) {
+        if (comoMedico) {
+          return cita.medico.usuario.id == userId;
+        }
+        return cita.usuario.id == userId;
+      }).toList();
+    } catch (e) {
+      errores.add('getCitas() -> $e');
+    }
+
+    throw Exception('No se pudieron cargar citas. ${errores.join(' | ')}');
   }
 
   //! updateCitas

@@ -30,8 +30,15 @@ public class MedicoService {
 
     }
     public int consultarValorConsulta(int usuarioId) {
-       int valor = Integer.parseInt(medicoRepository.findValorConsultaByUsuarioId(usuarioId));
-       return valor;
+       String valorConsulta = medicoRepository.findValorConsultaByUsuarioId(usuarioId);
+       if (valorConsulta == null || valorConsulta.isBlank()) {
+           return 0;
+       }
+       try {
+           return Integer.parseInt(valorConsulta);
+       } catch (NumberFormatException e) {
+           return 0;
+       }
     }
 
     public Medico obtenerMedicoPorUsuarioId(int usuarioId) {

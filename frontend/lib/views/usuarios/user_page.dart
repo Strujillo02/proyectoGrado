@@ -169,6 +169,9 @@ class _UserManagementPageState extends State<UserManagementPage> {
       usuario: usuarioEncontrado!,
       estado: _selectedEstadoMedico ?? 'Activo',
       tarjetaProfe: tarjetaProfeController.text.trim(),
+      valorConsulta: 0,
+      latitud: 0,
+      longitud: 0,
     );
 
     final success = await _medicoService.createMedicos(medico);

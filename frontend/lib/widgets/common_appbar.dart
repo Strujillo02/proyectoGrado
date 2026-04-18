@@ -87,23 +87,41 @@ class _CommonAppBarState extends State<CommonAppBar> {
     try {
       final auth = AuthService();
       final User? user = await auth.getUser();
-      if (user == null) return;
-      if (user.tipo_usuario.toLowerCase() != 'medico') return;
+      if (user == null) {
+        debugPrint('No user found for medico state init');
+        return;
+      }
+      if (user.tipo_usuario.toLowerCase() != 'medico') {
+        debugPrint('User is not medico: ${user.tipo_usuario}');
+        return;
+      }
       setState(() => _isMedico = true);
 
-      final ms = MedicoService();
-      final medicos = await ms.getMedicos();
       try {
-        final found = medicos.firstWhere((m) => m.usuario.id == user.id);
+        final ms = MedicoService();
+        final medicos = await ms.getMedicos();
+        if (medicos.isEmpty) {
+          debugPrint('No medicos found for user');
+          return;
+        }
+
+        final found = medicos.firstWhere(
+          (m) => m.usuario.id == user.id,
+          orElse: () => throw Exception('Medico not found for user ${user.id}'),
+        );
+
         _medico = found;
         final est = found.estado;
         final active = _estadoEsActivo(est);
         setState(() => _switchValue = active);
-      } catch (_) {
-        // no encontrado
+        debugPrint('Medico loaded: ${found.id}, estado: ${found.estado}');
+      } catch (e) {
+        debugPrint('Error finding medico for user: $e');
+        setState(() => _isMedico = false);
       }
     } catch (e) {
       debugPrint('Error inicializando estado medico en AppBar: $e');
+      setState(() => _isMedico = false);
     }
   }
 
@@ -118,7 +136,16 @@ class _CommonAppBarState extends State<CommonAppBar> {
   }
 
   Future<void> _onToggle(bool newVal) async {
-    if (_medico == null) return;
+    if (_medico == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text(
+                  'No se pudo cargar los datos del médico. Recarga la página.')),
+        );
+      }
+      return;
+    }
     setState(() {
       _loadingSwitch = true;
       _switchValue = newVal;
@@ -131,6 +158,8 @@ class _CommonAppBarState extends State<CommonAppBar> {
         estado: newVal ? 'Activo' : 'Inactivo',
         tarjetaProfe: _medico!.tarjetaProfe,
         valorConsulta: _medico!.valorConsulta,
+        latitud: _medico!.latitud,
+        longitud: _medico!.longitud,
       );
       final ok = await MedicoService().updateMedicos(updated);
       if (!ok) {
@@ -157,12 +186,13 @@ class _CommonAppBarState extends State<CommonAppBar> {
             incluirContrasena: false,
           );
           if (okUser) {
-            if (mounted)
+            if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                     content: Text(
                         'Estado actualizado (usuario): ${newVal ? 'Activo' : 'Inactivo'}')),
               );
+            }
             setState(() {
               _medico = Medico(
                 id: _medico!.id,
@@ -171,40 +201,46 @@ class _CommonAppBarState extends State<CommonAppBar> {
                 estado: newVal ? 'Activo' : 'Inactivo',
                 tarjetaProfe: _medico!.tarjetaProfe,
                 valorConsulta: _medico!.valorConsulta,
+                latitud: _medico!.latitud,
+                longitud: _medico!.longitud,
               );
             });
           } else {
             setState(() => _switchValue = !_switchValue);
-            if (mounted)
+            if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                     content: Text('No se pudo actualizar estado del médico')),
               );
+            }
           }
         } catch (e) {
           setState(() => _switchValue = !_switchValue);
-          if (mounted)
+          if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                   content: Text('No se pudo actualizar estado del médico')),
             );
+          }
         }
       } else {
-        if (mounted)
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
                 content: Text(
                     'Estado actualizado: ${newVal ? 'Activo' : 'Inactivo'}')),
           );
+        }
         setState(() => _medico = updated);
       }
     } catch (e) {
       debugPrint('Error actualizando estado medico: $e');
       setState(() => _switchValue = !_switchValue);
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Error actualizando estado del médico')),
         );
+      }
     } finally {
       if (mounted) setState(() => _loadingSwitch = false);
     }
@@ -294,9 +330,10 @@ class _CommonAppBarState extends State<CommonAppBar> {
           ? IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white),
               onPressed: () async {
+                final router = GoRouter.of(context);
                 final targetPath = await _resolveHomePathForLoggedUser();
                 if (!mounted) return;
-                context.go(targetPath);
+                router.go(targetPath);
               },
             )
           : null,

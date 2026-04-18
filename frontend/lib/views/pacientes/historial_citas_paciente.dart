@@ -43,7 +43,10 @@ class _HistorialCitasPacientePageState
         setState(() => _error = 'No se pudo determinar el usuario logueado');
         return;
       }
-      final lista = await _citasService.getCitasPorUsuarioid(user!.id!);
+      final lista = await _citasService.getCitasParaUsuarioConFallback(
+        userId: user!.id!,
+        comoMedico: false,
+      );
       setState(() => _todas = lista);
     } catch (e) {
       setState(() => _error = 'Error cargando citas: $e');
