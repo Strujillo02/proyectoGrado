@@ -44,8 +44,8 @@ class Citas {
         estado: Citas._normalizeEstado(json['estado']),
         tipo_consulta: json['tipo_consulta'],
         fecha_cita: DateTime.parse(json['fecha_cita']),
-        latitud: json['latitud'].toDouble(),
-        longitud: json['longitud'].toDouble(),
+        latitud: Citas._parseDouble(json['latitud']),
+        longitud: Citas._parseDouble(json['longitud']),
         medico: Medico.fromJson(json['medico']),
         usuario: User.fromJson(json['usuario']),
         respuesta_medico: json['respuesta_medico'] ?? '',
@@ -71,24 +71,40 @@ class Citas {
   // Normaliza el estado recibido del backend para evitar nulls y mantener valores canónicos (BACKEND)
   static String _normalizeEstado(dynamic value) {
     final raw = (value ?? '').toString().trim();
-    if (raw.isEmpty) return 'Pendiente';
+    if (raw.isEmpty) return 'PENDIENTE';
     switch (raw.toUpperCase()) {
       case 'PENDIENTE':
+      case 'AGENDADA':
+      case 'PROGRAMADA':
+      case 'EN PROCESO':
+      case 'EN_PROCESO':
+      case 'PENDIENTE PAGO':
+      case 'PENDIENTE_PAGO':
         return 'PENDIENTE';
       case 'CONFIRMADA':
       case 'ACEPTADA':
+      case 'COMPLETADA':
+      case 'FINALIZADA':
+      case 'ATENDIDA':
         return 'CONFIRMADA';
       case 'CANCELADA':
       case 'RECHAZADA':
         return 'CANCELADA';
       default:
-        return 'PENDIENTE';
+        return raw.toUpperCase();
     }
+  }
+
+  static double _parseDouble(dynamic value) {
+    if (value == null) return 0;
+    if (value is num) return value.toDouble();
+    final normalized = value.toString().trim().replaceAll(',', '.');
+    return double.tryParse(normalized) ?? 0;
   }
 
   // Texto amigable para UI
   String get estadoLabel {
-    switch (estado.toUpperCase()) {
+    switch (_normalizeEstado(estado)) {
       case 'PENDIENTE':
         return 'Pendiente';
       case 'CONFIRMADA':
@@ -96,8 +112,16 @@ class Citas {
       case 'CANCELADA':
         return 'Cancelada';
       default:
-        return 'Pendiente';
+        return estado;
     }
+  }
+
+  // Helpers de clasificación para las vistas de historial.
+  bool get esCompletada => _normalizeEstado(estado) == 'CONFIRMADA';
+
+  bool get esPendiente {
+    final n = _normalizeEstado(estado);
+    return n == 'PENDIENTE' || n == 'EN_PROCESO';
   }
 
   // Valor de consulta unificado para UI.

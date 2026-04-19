@@ -201,10 +201,8 @@ class _HistorialCitasPacientePageState
       );
     }
 
-    final pendientes =
-        _todas.where((c) => c.estado.toUpperCase() == 'PENDIENTE').toList();
-    final completadas =
-        _todas.where((c) => c.estado.toUpperCase() == 'CONFIRMADA').toList();
+    final pendientes = _todas.where((c) => c.esPendiente).toList();
+    final completadas = _todas.where((c) => c.esCompletada).toList();
     // Order newest to oldest
     final baseList = _tabIndex == 0 ? pendientes : completadas;
     baseList.sort((a, b) => b.fecha_cita.compareTo(a.fecha_cita));
@@ -248,7 +246,7 @@ class _HistorialCitasPacientePageState
   }
 
   Widget _citaCard(Citas c) {
-    final completada = c.estado.toUpperCase() == 'CONFIRMADA';
+    final completada = c.esCompletada;
     // Uso de locale 'es' ya inicializado en initState
     final rawFecha =
         DateFormat('HH:mmEEEE, d, MMM, y', 'es').format(c.fecha_cita.toLocal());

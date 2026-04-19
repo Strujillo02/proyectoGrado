@@ -36,11 +36,13 @@ public class Medico {
     @Column(name = "valor_consulta", length = 50)
     Integer valor_consulta;
     
-    @Transient
+    @Column(name = "latitud", precision = 9, scale = 6)
     BigDecimal latitud;
 
-    @Transient
+    @Column(name = "longitud", precision = 9, scale = 6)
     BigDecimal longitud;
 
+    @Column(name = "calificacion", length = 50)
+    BigDecimal calificacion;
 
     }

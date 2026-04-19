@@ -111,6 +111,16 @@ class _EditarMedicoPageState extends State<EditarMedicoPage> {
     if (!_formKey.currentState!.validate()) return;
     if (_medicoOriginal == null) return;
 
+    final latitud = _parseCoordinate(latitudController.text);
+    final longitud = _parseCoordinate(longitudController.text);
+    if (latitud == null || longitud == null) {
+      setState(() {
+        errorMessage =
+            'Ingresa latitud y longitud con un formato numerico valido';
+      });
+      return;
+    }
+
     final medicoEditado = Medico(
       id: widget.id,
       especialidad: _especialidadSeleccionada!,
@@ -130,8 +140,8 @@ class _EditarMedicoPageState extends State<EditarMedicoPage> {
       estado: _selectedEstadoMedico ?? 'Activo',
       tarjetaProfe: tarjetaProfeController.text.trim(),
       valorConsulta: _medicoOriginal!.valorConsulta,
-      latitud: double.tryParse(latitudController.text.trim()) ?? 0,
-      longitud: double.tryParse(longitudController.text.trim()) ?? 0,
+      latitud: latitud,
+      longitud: longitud,
     );
 
     final success = await _medicoService.updateMedicos(medicoEditado);
@@ -166,17 +176,46 @@ class _EditarMedicoPageState extends State<EditarMedicoPage> {
     TextEditingController controller,
     String label, {
     bool obscure = false,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
   }) {
     return TextFormField(
       controller: controller,
       obscureText: obscure,
+      keyboardType: keyboardType,
       decoration: InputDecoration(
         labelText: label,
         border: const OutlineInputBorder(),
       ),
-      validator: (value) =>
-          value == null || value.isEmpty ? 'Este campo es obligatorio' : null,
+      validator: validator ??
+          (value) =>
+              value == null || value.isEmpty ? 'Este campo es obligatorio' : null,
     );
+  }
+
+  double? _parseCoordinate(String raw) {
+    final normalized = raw.trim().replaceAll(',', '.');
+    if (normalized.isEmpty) return null;
+    return double.tryParse(normalized);
+  }
+
+  String? _validateCoordinate(String? value, {required bool isLatitude}) {
+    final parsed = _parseCoordinate(value ?? '');
+    if (parsed == null) {
+      return isLatitude
+          ? 'Latitud invalida. Ejemplo: 4.7110'
+          : 'Longitud invalida. Ejemplo: -74.0721';
+    }
+
+    if (isLatitude && (parsed < -90 || parsed > 90)) {
+      return 'La latitud debe estar entre -90 y 90';
+    }
+
+    if (!isLatitude && (parsed < -180 || parsed > 180)) {
+      return 'La longitud debe estar entre -180 y 180';
+    }
+
+    return null;
   }
 
   Widget buildDropdown(
@@ -287,9 +326,29 @@ class _EditarMedicoPageState extends State<EditarMedicoPage> {
               const SizedBox(height: 12),
               buildTextField(tarjetaProfeController, 'Tarjeta profesional'),
               const SizedBox(height: 12),
-              buildTextField(latitudController, 'Latitud'),
+              buildTextField(
+                latitudController,
+                'Latitud',
+                keyboardType:
+                    const TextInputType.numberWithOptions(
+                      decimal: true,
+                      signed: true,
+                    ),
+                validator: (value) =>
+                    _validateCoordinate(value, isLatitude: true),
+              ),
               const SizedBox(height: 12),
-              buildTextField(longitudController, 'Longitud'),
+              buildTextField(
+                longitudController,
+                'Longitud',
+                keyboardType:
+                    const TextInputType.numberWithOptions(
+                      decimal: true,
+                      signed: true,
+                    ),
+                validator: (value) =>
+                    _validateCoordinate(value, isLatitude: false),
+              ),
               const SizedBox(height: 20),
               if (errorMessage != null)
                 Text(errorMessage!, style: const TextStyle(color: Colors.red)),

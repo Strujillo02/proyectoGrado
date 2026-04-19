@@ -112,11 +112,18 @@ class _HistorialCitasPageState extends State<HistorialCitasPage> {
                 ),
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      final lista = await _citasService.getCitasParaUsuarioConFallback(
-                        userId: user!.id!,
-                        comoMedico: true,
-                      );
-                      setState(() => _todas = lista);
+              ),
+              onChanged: (v) => setState(() => _filterText = v.trim()),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Expanded(child: _buildContent()),
+        ],
+      ),
+    );
+  }
+
+  Widget _segmented() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
@@ -199,10 +206,8 @@ class _HistorialCitasPageState extends State<HistorialCitasPage> {
       );
     }
 
-    final pendientes =
-        _todas.where((c) => c.estado.toUpperCase() == 'PENDIENTE').toList();
-    final completadas =
-        _todas.where((c) => c.estado.toUpperCase() == 'CONFIRMADA').toList();
+    final pendientes = _todas.where((c) => c.esPendiente).toList();
+    final completadas = _todas.where((c) => c.esCompletada).toList();
     // Order newest to oldest
     final baseList = _tabIndex == 0 ? pendientes : completadas;
     baseList.sort((a, b) => b.fecha_cita.compareTo(a.fecha_cita));
@@ -246,7 +251,7 @@ class _HistorialCitasPageState extends State<HistorialCitasPage> {
   }
 
   Widget _citaCard(Citas c) {
-    final completada = c.estado.toUpperCase() == 'CONFIRMADA';
+    final completada = c.esCompletada;
     // Uso de locale 'es' ya inicializado en initState
     final rawFecha =
         DateFormat('EEEE d, HH:mm', 'es').format(c.fecha_cita.toLocal());

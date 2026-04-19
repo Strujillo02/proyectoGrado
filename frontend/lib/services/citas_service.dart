@@ -80,13 +80,17 @@ class CitasService {
     final errores = <String>[];
 
     try {
-      return await getCitasPorUsuario(userId);
+      final lista = await getCitasPorUsuario(userId);
+      if (lista.isNotEmpty) return lista;
+      errores.add('cita/v1/get/$userId -> respuesta vacia');
     } catch (e) {
       errores.add('cita/v1/get/$userId -> $e');
     }
 
     try {
-      return await getCitasPorUsuarioid(userId);
+      final lista = await getCitasPorUsuarioid(userId);
+      if (lista.isNotEmpty) return lista;
+      errores.add('cita/v1/citasporusuario/$userId -> respuesta vacia');
     } catch (e) {
       errores.add('cita/v1/citasporusuario/$userId -> $e');
     }
