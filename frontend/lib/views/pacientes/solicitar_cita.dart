@@ -103,6 +103,37 @@ class _PedircitaPageState extends State<PedircitaPage> {
     'Plazoleta',
     'Transversal',
   ];
+
+  String _formatearCalificacion(double valor) {
+    return valor.toStringAsFixed(1).replaceAll('.', ',');
+  }
+
+  String _estrellasCalificacion(double valor) {
+    final v = valor.clamp(0, 5).toDouble();
+    final llenas = v.round();
+    final vacias = 5 - llenas;
+    return '${'★' * llenas}${'☆' * vacias}';
+  }
+
+  Widget _medicoDropdownLabel(Medico m) {
+    final cal = m.calificacion.clamp(0, 5).toDouble();
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            m.usuario.nombre,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          '${_estrellasCalificacion(cal)} ${_formatearCalificacion(cal)}',
+          style: const TextStyle(fontSize: 13),
+        ),
+      ],
+    );
+  }
+
   String _formatCOP(int value) {
     final s = value.toString();
     final withDots = s.replaceAllMapped(
@@ -245,8 +276,13 @@ class _PedircitaPageState extends State<PedircitaPage> {
     try {
       final lista = await _medicoService.getMedicos();
       setState(() {
-        _medicos =
-            lista.where((m) => m.especialidad.id == especialidadId).toList();
+        _medicos = lista
+            .where(
+              (m) =>
+                  m.especialidad.id == especialidadId &&
+                  m.estado.toLowerCase() == 'activo',
+            )
+            .toList();
       });
     } catch (e) {
       setState(() {
@@ -412,7 +448,7 @@ class _PedircitaPageState extends State<PedircitaPage> {
                                   items: _medicos
                                       .map((m) => DropdownMenuItem(
                                             value: m,
-                                            child: Text(m.usuario.nombre),
+                                            child: _medicoDropdownLabel(m),
                                           ))
                                       .toList(),
                                   onChanged: (val) async {
