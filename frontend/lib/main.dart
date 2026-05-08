@@ -32,12 +32,51 @@ final StreamController<Map<String, dynamic>> notificationActionStream =
 const String _actionAccept = 'cita_accept';
 const String _actionReject = 'cita_reject';
 
+bool _esSolicitudNuevaCita(Map<String, dynamic> data) {
+  final citaIdRaw =
+      (data['citaId'] ?? data['cita_id'] ?? data['idCita'])?.toString();
+  if (citaIdRaw == null || citaIdRaw.isEmpty) return false;
+
+  final tipo = (data['tipo_notificacion'] ??
+          data['notificationType'] ??
+          data['tipo'] ??
+          data['evento'])
+      ?.toString()
+      .trim()
+      .toLowerCase();
+  if (tipo != null && tipo.isNotEmpty) {
+    return tipo.contains('solic') ||
+        tipo.contains('create') ||
+        tipo.contains('creat') ||
+        tipo.contains('nueva');
+  }
+
+  final estado = (data['estado'] ?? data['estado_cita'] ?? data['status'])
+      ?.toString()
+      .trim()
+      .toUpperCase();
+  if (estado != null && estado.isNotEmpty) {
+    return estado == 'PENDIENTE' ||
+        estado == 'SOLICITADA' ||
+        estado == 'CREADA';
+  }
+
+  // Si no hay metadatos de tipo/estado, asumimos que es una solicitud nueva.
+  return true;
+}
+
 // Handler de mensajes en background (obligatorio si lo usas)
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   // Mostrar notificación local en background si recibes payload de datos (acciones)
   try {
+    if (!_esSolicitudNuevaCita(message.data)) {
+      debugPrint(
+          'BG notification ignorada: no es solicitud nueva de cita -> ${message.data}');
+      return;
+    }
+
     // Preferir datos personalizados si están presentes
     String title = message.data['title']?.toString() ??
         message.notification?.title ??
@@ -224,6 +263,12 @@ void main() async {
   FirebaseMessaging.onMessage.listen((m) {
     debugPrint(
         'FCM onMessage -> \\n+title: ${m.notification?.title} | body: ${m.notification?.body} | data: ${m.data}');
+
+    if (!_esSolicitudNuevaCita(m.data)) {
+      debugPrint(
+          'Foreground notification ignored: no es solicitud nueva de cita -> ${m.data}');
+      return;
+    }
 
     final n = m.notification;
     String title = m.data['title']?.toString() ?? n?.title ?? 'Notificación';

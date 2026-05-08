@@ -21,11 +21,11 @@ class CalificacionesService {
 
       final response = await http.post(uri, headers: headers, body: body);
 
-      return response.statusCode == 200;
+      return response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          response.statusCode == 204;
     } catch (e) {
       throw Exception('Error al crear calificación: $e');
     }
   }
-
-  
 }

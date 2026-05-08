@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/models/medico.dart';
 import 'package:frontend/models/user.dart';
-import 'package:frontend/models/especialidades.dart';
-import 'package:frontend/services/especialidades_service.dart';
+import 'package:frontend/services/medico_location_sync_service.dart';
 import 'package:frontend/services/medico_service.dart';
+import 'package:frontend/services/user_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:frontend/widgets/common_appbar.dart';
 
@@ -19,55 +19,21 @@ class EditarMedicoPage extends StatefulWidget {
 class _EditarMedicoPageState extends State<EditarMedicoPage> {
   final _formKey = GlobalKey<FormState>();
   final _medicoService = MedicoService();
+  final _userService = UserService();
 
-  // Controladores inicializados vacíos
-  final TextEditingController nombreController = TextEditingController();
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController telefonoController = TextEditingController();
-  final TextEditingController identificacionController =
-      TextEditingController();
-  final TextEditingController direccionController = TextEditingController();
+  // Campos editables para médico en esta vista
   final TextEditingController contrasenaController = TextEditingController();
-  final TextEditingController tarjetaProfeController = TextEditingController();
-  final TextEditingController latitudController = TextEditingController();
-  final TextEditingController longitudController = TextEditingController();
-
-  String? _selectedEstadoMedico;
-  String? _selectedDocumentType;
-  String? _selectedUserType;
-  String? _selectedGenero;
-  String? _selectedEstado;
+  final TextEditingController valorConsultaController = TextEditingController();
 
   bool _loading = true;
   String? errorMessage;
 
   Medico? _medicoOriginal;
 
-  // Variables para especialidades
-  List<Especialidades> _especialidades = [];
-  Especialidades? _especialidadSeleccionada;
-  final EspecialidadesService _especialidadesService = EspecialidadesService();
-  bool _cargandoEspecialidades = true;
-
   @override
   void initState() {
     super.initState();
     _loadMedico();
-    cargarEspecialidades();
-  }
-
-  void cargarEspecialidades() async {
-    try {
-      final lista = await _especialidadesService.getEspecialidades();
-      setState(() {
-        _especialidades = lista;
-        _cargandoEspecialidades = false;
-      });
-    } catch (e) {
-      setState(() {
-        _cargandoEspecialidades = false;
-      });
-    }
   }
 
   Future<void> _loadMedico() async {
@@ -80,22 +46,9 @@ class _EditarMedicoPageState extends State<EditarMedicoPage> {
 
       _medicoOriginal = medico;
 
-      // Llenar campos del formulario
-      nombreController.text = medico.usuario.nombre;
-      emailController.text = medico.usuario.email;
-      telefonoController.text = medico.usuario.telefono ?? '';
-      identificacionController.text = medico.usuario.identificacion;
-      direccionController.text = medico.usuario.direccion ?? '';
-      contrasenaController.text = medico.usuario.contrasena ?? '';
-      tarjetaProfeController.text = medico.tarjetaProfe;
-      latitudController.text = medico.latitud.toString();
-      longitudController.text = medico.longitud.toString();
-      _especialidadSeleccionada = medico.especialidad;
-      _selectedEstadoMedico = medico.estado;
-      _selectedDocumentType = medico.usuario.tipo_identificacion;
-      _selectedUserType = medico.usuario.tipo_usuario;
-      _selectedGenero = medico.usuario.genero;
-      _selectedEstado = medico.usuario.estado;
+      // Se deja vacía para que solo se envíe si se desea cambiar.
+      contrasenaController.clear();
+      valorConsultaController.text = medico.valorConsulta.toStringAsFixed(0);
 
       setState(() => _loading = false);
     } catch (e) {
@@ -111,64 +64,84 @@ class _EditarMedicoPageState extends State<EditarMedicoPage> {
     if (!_formKey.currentState!.validate()) return;
     if (_medicoOriginal == null) return;
 
-    final latitud = _parseCoordinate(latitudController.text);
-    final longitud = _parseCoordinate(longitudController.text);
-    if (latitud == null || longitud == null) {
+    final valorConsulta = _parseNumber(valorConsultaController.text);
+    if (valorConsulta == null || valorConsulta < 0) {
       setState(() {
         errorMessage =
-            'Ingresa latitud y longitud con un formato numerico valido';
+            'Ingresa un valor de consulta valido (numero mayor o igual a 0)';
+      });
+      return;
+    }
+
+    final nuevaContrasena = contrasenaController.text.trim();
+    if (nuevaContrasena.isNotEmpty && nuevaContrasena.length < 6) {
+      setState(() {
+        errorMessage = 'La contraseña debe tener mínimo 6 caracteres';
       });
       return;
     }
 
     final medicoEditado = Medico(
       id: widget.id,
-      especialidad: _especialidadSeleccionada!,
-      usuario: User(
-        id: _medicoOriginal!.usuario.id,
-        nombre: nombreController.text.trim(),
-        email: emailController.text.trim(),
-        telefono: telefonoController.text.trim(),
-        identificacion: identificacionController.text.trim(),
-        direccion: direccionController.text.trim(),
-        contrasena: contrasenaController.text.trim(),
-        tipo_identificacion: _selectedDocumentType ?? '',
-        tipo_usuario: _selectedUserType ?? '',
-        genero: _selectedGenero,
-        estado: _selectedEstado ?? 'Activo',
-      ),
-      estado: _selectedEstadoMedico ?? 'Activo',
-      tarjetaProfe: tarjetaProfeController.text.trim(),
-      valorConsulta: _medicoOriginal!.valorConsulta,
-      latitud: latitud,
-      longitud: longitud,
+      especialidad: _medicoOriginal!.especialidad,
+      usuario: _medicoOriginal!.usuario,
+      estado: _medicoOriginal!.estado,
+      tarjetaProfe: _medicoOriginal!.tarjetaProfe,
+      valorConsulta: valorConsulta,
+      latitud: _medicoOriginal!.latitud,
+      longitud: _medicoOriginal!.longitud,
+      calificacion: _medicoOriginal!.calificacion,
     );
 
-    final success = await _medicoService.updateMedicos(medicoEditado);
+    final tarifaOk = await _medicoService.updateMedicos(medicoEditado);
 
-    if (success && mounted) {
+    bool contrasenaOk = true;
+    if (nuevaContrasena.isNotEmpty) {
+      final userOriginal = _medicoOriginal!.usuario;
+      final usuarioEditado = User(
+        id: userOriginal.id,
+        nombre: userOriginal.nombre,
+        email: userOriginal.email,
+        telefono: userOriginal.telefono,
+        identificacion: userOriginal.identificacion,
+        direccion: userOriginal.direccion,
+        contrasena: nuevaContrasena,
+        tipo_identificacion: userOriginal.tipo_identificacion,
+        tipo_usuario: userOriginal.tipo_usuario,
+        genero: userOriginal.genero,
+        estado: userOriginal.estado,
+        token_dispositivo: userOriginal.token_dispositivo,
+      );
+
+      contrasenaOk = await _userService.updateUsuario(
+        usuarioEditado,
+        incluirContrasena: true,
+      );
+    }
+
+    if (tarifaOk && contrasenaOk && mounted) {
+      if ((_medicoOriginal!.estado).toLowerCase() == 'activo') {
+        await MedicoLocationSyncService.instance.start();
+      } else {
+        await MedicoLocationSyncService.instance.stop();
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Médico actualizado correctamente')),
+        const SnackBar(
+            content: Text('Tarifa y contraseña actualizadas correctamente')),
       );
       context.pop();
     } else {
       setState(() {
-        errorMessage = 'Error al actualizar el médico';
+        errorMessage = 'Error al actualizar la tarifa o la contraseña';
       });
     }
   }
 
   @override
   void dispose() {
-    nombreController.dispose();
-    emailController.dispose();
-    telefonoController.dispose();
-    identificacionController.dispose();
-    direccionController.dispose();
     contrasenaController.dispose();
-    tarjetaProfeController.dispose();
-    latitudController.dispose();
-    longitudController.dispose();
+    valorConsultaController.dispose();
     super.dispose();
   }
 
@@ -188,53 +161,16 @@ class _EditarMedicoPageState extends State<EditarMedicoPage> {
         border: const OutlineInputBorder(),
       ),
       validator: validator ??
-          (value) =>
-              value == null || value.isEmpty ? 'Este campo es obligatorio' : null,
+          (value) => value == null || value.isEmpty
+              ? 'Este campo es obligatorio'
+              : null,
     );
   }
 
-  double? _parseCoordinate(String raw) {
+  double? _parseNumber(String raw) {
     final normalized = raw.trim().replaceAll(',', '.');
     if (normalized.isEmpty) return null;
     return double.tryParse(normalized);
-  }
-
-  String? _validateCoordinate(String? value, {required bool isLatitude}) {
-    final parsed = _parseCoordinate(value ?? '');
-    if (parsed == null) {
-      return isLatitude
-          ? 'Latitud invalida. Ejemplo: 4.7110'
-          : 'Longitud invalida. Ejemplo: -74.0721';
-    }
-
-    if (isLatitude && (parsed < -90 || parsed > 90)) {
-      return 'La latitud debe estar entre -90 y 90';
-    }
-
-    if (!isLatitude && (parsed < -180 || parsed > 180)) {
-      return 'La longitud debe estar entre -180 y 180';
-    }
-
-    return null;
-  }
-
-  Widget buildDropdown(
-    String label,
-    String? value,
-    List<String> items,
-    Function(String?) onChanged,
-  ) {
-    return DropdownButtonFormField<String>(
-      value: value,
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
-      ),
-      items:
-          items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-      onChanged: onChanged,
-      validator: (val) => val == null ? 'Seleccione una opción' : null,
-    );
   }
 
   @override
@@ -247,7 +183,7 @@ class _EditarMedicoPageState extends State<EditarMedicoPage> {
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
         child: CommonAppBar(
-          title: const Text('Editar Médico'),
+          title: const Text('Actualizar tarifa y contraseña'),
           backgroundColor: const Color.fromRGBO(21, 99, 161, 1),
         ),
       ),
@@ -257,97 +193,30 @@ class _EditarMedicoPageState extends State<EditarMedicoPage> {
           key: _formKey,
           child: ListView(
             children: [
-              buildTextField(nombreController, 'Nombre'),
-              const SizedBox(height: 12),
-              buildTextField(emailController, 'Correo electrónico'),
-              const SizedBox(height: 12),
-              buildTextField(telefonoController, 'Teléfono'),
-              const SizedBox(height: 12),
-              buildTextField(identificacionController, 'Identificación'),
-              const SizedBox(height: 12),
-              buildTextField(direccionController, 'Dirección'),
-              const SizedBox(height: 12),
-              buildTextField(contrasenaController, 'Contraseña', obscure: true),
-              const SizedBox(height: 12),
-              buildDropdown(
-                'Tipo de documento',
-                _selectedDocumentType,
-                const [
-                  'Cedula de ciudadania',
-                  'Pasaporte',
-                  'Cedula de extranjeria',
-                ],
-                (val) => setState(() => _selectedDocumentType = val),
-              ),
-              const SizedBox(height: 12),
-              buildDropdown(
-                'Tipo de usuario',
-                _selectedUserType,
-                const ['Paciente', 'Medico', 'Administrador'],
-                (val) => setState(() => _selectedUserType = val),
-              ),
-              const SizedBox(height: 12),
-              buildDropdown(
-                'Género',
-                _selectedGenero,
-                const ['Masculino', 'Femenino'],
-                (val) => setState(() => _selectedGenero = val),
-              ),
-              const SizedBox(height: 12),
-              buildDropdown(
-                'Estado de usuario',
-                _selectedEstado,
-                const ['Activo', 'Inactivo'],
-                (val) => setState(() => _selectedEstado = val),
-              ),
-              const SizedBox(height: 12),
-              _cargandoEspecialidades
-                  ? const CircularProgressIndicator()
-                  : buildDropdown(
-                      'Especialidad',
-                      _especialidadSeleccionada?.nombre,
-                      _especialidades.map((e) => e.nombre).toList(),
-                      (val) {
-                        setState(() {
-                          _especialidadSeleccionada =
-                              _especialidades.firstWhere(
-                            (e) => e.nombre == val,
-                          );
-                        });
-                      },
-                    ),
-              const SizedBox(height: 12),
-              buildDropdown(
-                'Estado de médico',
-                _selectedEstadoMedico,
-                const ['Activo', 'Inactivo'],
-                (val) => setState(() => _selectedEstadoMedico = val),
-              ),
-              const SizedBox(height: 12),
-              buildTextField(tarjetaProfeController, 'Tarjeta profesional'),
-              const SizedBox(height: 12),
               buildTextField(
-                latitudController,
-                'Latitud',
+                valorConsultaController,
+                'Valor consulta',
                 keyboardType:
-                    const TextInputType.numberWithOptions(
-                      decimal: true,
-                      signed: true,
-                    ),
-                validator: (value) =>
-                    _validateCoordinate(value, isLatitude: true),
+                    const TextInputType.numberWithOptions(decimal: true),
+                validator: (value) {
+                  final parsed = _parseNumber(value ?? '');
+                  if (parsed == null || parsed < 0) {
+                    return 'Ingresa un valor valido';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 12),
               buildTextField(
-                longitudController,
-                'Longitud',
-                keyboardType:
-                    const TextInputType.numberWithOptions(
-                      decimal: true,
-                      signed: true,
-                    ),
-                validator: (value) =>
-                    _validateCoordinate(value, isLatitude: false),
+                contrasenaController,
+                'Nueva contraseña (opcional)',
+                obscure: true,
+                validator: (value) {
+                  final v = (value ?? '').trim();
+                  if (v.isEmpty) return null;
+                  if (v.length < 6) return 'Mínimo 6 caracteres';
+                  return null;
+                },
               ),
               const SizedBox(height: 20),
               if (errorMessage != null)

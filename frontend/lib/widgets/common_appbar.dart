@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:frontend/services/auth_service.dart';
+import 'package:frontend/services/medico_location_sync_service.dart';
 import 'package:frontend/services/medico_service.dart';
 import 'package:frontend/models/medico.dart';
 import 'package:frontend/models/user.dart';
@@ -114,6 +115,11 @@ class _CommonAppBarState extends State<CommonAppBar> {
         final est = found.estado;
         final active = _estadoEsActivo(est);
         setState(() => _switchValue = active);
+        if (active) {
+          await MedicoLocationSyncService.instance.start();
+        } else {
+          await MedicoLocationSyncService.instance.stop();
+        }
         debugPrint('Medico loaded: ${found.id}, estado: ${found.estado}');
       } catch (e) {
         debugPrint('Error finding medico for user: $e');
@@ -160,6 +166,7 @@ class _CommonAppBarState extends State<CommonAppBar> {
         valorConsulta: _medico!.valorConsulta,
         latitud: _medico!.latitud,
         longitud: _medico!.longitud,
+        calificacion: _medico!.calificacion,
       );
       final ok = await MedicoService().updateMedicos(updated);
       if (!ok) {
@@ -203,8 +210,14 @@ class _CommonAppBarState extends State<CommonAppBar> {
                 valorConsulta: _medico!.valorConsulta,
                 latitud: _medico!.latitud,
                 longitud: _medico!.longitud,
+                calificacion: _medico!.calificacion,
               );
             });
+            if (newVal) {
+              await MedicoLocationSyncService.instance.start();
+            } else {
+              await MedicoLocationSyncService.instance.stop();
+            }
           } else {
             setState(() => _switchValue = !_switchValue);
             if (mounted) {
@@ -232,6 +245,11 @@ class _CommonAppBarState extends State<CommonAppBar> {
           );
         }
         setState(() => _medico = updated);
+        if (newVal) {
+          await MedicoLocationSyncService.instance.start();
+        } else {
+          await MedicoLocationSyncService.instance.stop();
+        }
       }
     } catch (e) {
       debugPrint('Error actualizando estado medico: $e');
@@ -309,6 +327,7 @@ class _CommonAppBarState extends State<CommonAppBar> {
             if (!confirmed) return;
 
             try {
+              await MedicoLocationSyncService.instance.stop();
               await AuthService().logout();
             } catch (e) {
               debugPrint('Error during logout: $e');

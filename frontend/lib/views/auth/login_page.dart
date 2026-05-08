@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:frontend/services/auth_service.dart';
+import 'package:frontend/services/medico_location_sync_service.dart';
 import 'package:frontend/widgets/common_appbar.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 
 class LoginPage extends StatefulWidget {
@@ -18,6 +21,25 @@ class _LoginPageState extends State<LoginPage> {
   final contrasenaController = TextEditingController();
   bool isLoading = false;
   String? errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _solicitarPermisosIniciales();
+  }
+
+  Future<void> _solicitarPermisosIniciales() async {
+    try {
+      var permisoUbicacion = await Geolocator.checkPermission();
+      if (permisoUbicacion == LocationPermission.denied) {
+        permisoUbicacion = await Geolocator.requestPermission();
+      }
+    } catch (_) {}
+
+    try {
+      await FirebaseMessaging.instance.requestPermission();
+    } catch (_) {}
+  }
 
   void login() async {
     if (!_formKey.currentState!.validate()) return;
@@ -41,10 +63,13 @@ class _LoginPageState extends State<LoginPage> {
       final authService = AuthService();
       final tipoUsuario = await authService.getUserType();
       if (tipoUsuario == 'Administrador') {
+        await MedicoLocationSyncService.instance.stop();
         context.go('/home/admin');
       } else if (tipoUsuario == 'Paciente') {
+        await MedicoLocationSyncService.instance.stop();
         context.go('/home/paciente');
       } else if (tipoUsuario == 'Medico') {
+        await MedicoLocationSyncService.instance.refreshForCurrentUser();
         context.go('/home/medico');
       } else {
         setState(() {

@@ -21,6 +21,7 @@ class _HistorialCitasPageState extends State<HistorialCitasPage> {
   final TextEditingController _filterController = TextEditingController();
   String _filterText = '';
   bool _cargando = true;
+  int? _actualizandoCitaId;
   String? _error;
 
   @override
@@ -206,7 +207,7 @@ class _HistorialCitasPageState extends State<HistorialCitasPage> {
       );
     }
 
-    final pendientes = _todas.where((c) => c.esPendiente).toList();
+    final pendientes = _todas.where((c) => !c.esCompletada).toList();
     final completadas = _todas.where((c) => c.esCompletada).toList();
     // Order newest to oldest
     final baseList = _tabIndex == 0 ? pendientes : completadas;
@@ -250,8 +251,73 @@ class _HistorialCitasPageState extends State<HistorialCitasPage> {
     );
   }
 
+  Future<void> _marcarComoCompletada(Citas cita) async {
+    if (cita.id == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo identificar la cita')),
+      );
+      return;
+    }
+
+    setState(() {
+      _actualizandoCitaId = cita.id;
+      _error = null;
+    });
+
+    final citaActualizada = Citas(
+      id: cita.id,
+      especialidad: cita.especialidad,
+      fecha_registro: cita.fecha_registro,
+      motivo_consulta: cita.motivo_consulta,
+      precio: cita.precio,
+      estado: 'CONFIRMADA',
+      tipo_consulta: cita.tipo_consulta,
+      fecha_cita: cita.fecha_cita,
+      latitud: cita.latitud,
+      longitud: cita.longitud,
+      medico: cita.medico,
+      usuario: cita.usuario,
+      respuesta_medico: cita.respuesta_medico,
+    );
+
+    try {
+      final ok = await _citasService.marcarComoCompletada(cita);
+      if (!ok) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo actualizar el estado de la cita')),
+        );
+        return;
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _todas = _todas.map((c) {
+          if (c.id == cita.id) return citaActualizada;
+          return c;
+        }).toList();
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cita marcada como completada')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error actualizando la cita: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _actualizandoCitaId = null;
+        });
+      }
+    }
+  }
+
   Widget _citaCard(Citas c) {
     final completada = c.esCompletada;
+    final puedeCompletar = c.esPendiente;
     // Uso de locale 'es' ya inicializado en initState
     final rawFecha =
         DateFormat('EEEE d, HH:mm', 'es').format(c.fecha_cita.toLocal());
@@ -343,28 +409,53 @@ class _HistorialCitasPageState extends State<HistorialCitasPage> {
               );
             }),
             const SizedBox(height: 14),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                decoration: BoxDecoration(
-                  color: completada
-                      ? const Color(0xFFDDE9F3)
-                      : const Color(0xFFE9EDF1),
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                child: Text(
-                  completada ? 'Completado' : 'En proceso',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                if (!completada && puedeCompletar)
+                  ElevatedButton.icon(
+                    onPressed: _actualizandoCitaId == c.id
+                        ? null
+                        : () => _marcarComoCompletada(c),
+                    icon: _actualizandoCitaId == c.id
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.check, size: 16),
+                    label: const Text('Marcar completada'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromRGBO(21, 99, 161, 1),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      textStyle: const TextStyle(fontSize: 12),
+                    ),
+                  )
+                else
+                  const SizedBox.shrink(),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  decoration: BoxDecoration(
                     color: completada
-                        ? const Color.fromRGBO(21, 99, 161, 1)
-                        : const Color(0xFF586471),
+                        ? const Color(0xFFDDE9F3)
+                        : const Color(0xFFE9EDF1),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: Text(
+                    completada ? 'Completada' : c.estadoLabel,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: completada
+                          ? const Color.fromRGBO(21, 99, 161, 1)
+                          : const Color(0xFF586471),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
           ],
         ),

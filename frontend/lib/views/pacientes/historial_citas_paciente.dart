@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/widgets/common_appbar.dart';
 import 'package:frontend/services/auth_service.dart';
+import 'package:frontend/services/calificaciones_service.dart';
 import 'package:frontend/services/citas_service.dart';
+import 'package:frontend/models/calificaciones.dart';
 import 'package:frontend/models/citas.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HistorialCitasPacientePage extends StatefulWidget {
   const HistorialCitasPacientePage({super.key});
@@ -18,12 +21,138 @@ class _HistorialCitasPacientePageState
     extends State<HistorialCitasPacientePage> {
   int _tabIndex = 0; // 0 = Pendientes, 1 = Completadas
   final _citasService = CitasService();
+  final _calificacionesService = CalificacionesService();
   final _authService = AuthService();
   List<Citas> _todas = [];
   final TextEditingController _filterController = TextEditingController();
   String _filterText = '';
   bool _cargando = true;
   String? _error;
+  bool _mostrandoDialogoCalificacion = false;
+
+  static const String _ratedCitasPrefsKey = 'rated_citas_ids';
+
+  Future<Set<int>> _getRatedCitas() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getStringList(_ratedCitasPrefsKey) ?? <String>[];
+    return saved.map(int.tryParse).whereType<int>().toSet();
+  }
+
+  Future<void> _saveRatedCita(int citaId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final ids = await _getRatedCitas();
+    ids.add(citaId);
+    await prefs.setStringList(
+      _ratedCitasPrefsKey,
+      ids.map((e) => e.toString()).toList(),
+    );
+  }
+
+  Future<void> _mostrarDialogoCalificacionSiAplica(List<Citas> citas) async {
+    if (!mounted || _mostrandoDialogoCalificacion) return;
+
+    final ratedIds = await _getRatedCitas();
+    Citas? citaPorCalificar;
+    for (final cita in citas) {
+      if (cita.esCompletada && cita.id != null && !ratedIds.contains(cita.id)) {
+        citaPorCalificar = cita;
+        break;
+      }
+    }
+    if (citaPorCalificar == null) return;
+
+    _mostrandoDialogoCalificacion = true;
+    try {
+      final int? estrellas = await _showCalificacionDialog(citaPorCalificar);
+      if (!mounted || estrellas == null) return;
+
+      final ok = await _calificacionesService.createCalificaciones(
+        Calificaciones(
+          calificacion: estrellas,
+          medico: citaPorCalificar.medico,
+        ),
+      );
+
+      if (!mounted) return;
+
+      if (ok) {
+        await _saveRatedCita(citaPorCalificar.id!);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Gracias por calificar el servicio.')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo guardar la calificación.')),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al guardar calificación: $e')),
+      );
+    } finally {
+      _mostrandoDialogoCalificacion = false;
+    }
+  }
+
+  Future<int?> _showCalificacionDialog(Citas cita) async {
+    int seleccion = 0;
+    final especialista = cita.medico.usuario.nombre;
+
+    return showDialog<int>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Califica tu cita'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Califica el servicio del especialista $especialista',
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      final value = index + 1;
+                      return IconButton(
+                        iconSize: 32,
+                        onPressed: () {
+                          setDialogState(() {
+                            seleccion = value;
+                          });
+                        },
+                        icon: Icon(
+                          value <= seleccion ? Icons.star : Icons.star_border,
+                          color: Colors.amber,
+                        ),
+                      );
+                    }),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Más tarde'),
+                ),
+                ElevatedButton(
+                  onPressed: seleccion == 0
+                      ? null
+                      : () => Navigator.of(dialogContext).pop(seleccion),
+                  child: const Text('Enviar'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
   @override
   void initState() {
@@ -48,11 +177,18 @@ class _HistorialCitasPacientePageState
         comoMedico: false,
       );
       setState(() => _todas = lista);
+      await _mostrarDialogoCalificacionSiAplica(lista);
     } catch (e) {
       setState(() => _error = 'Error cargando citas: $e');
     } finally {
       if (mounted) setState(() => _cargando = false);
     }
+  }
+
+  @override
+  void dispose() {
+    _filterController.dispose();
+    super.dispose();
   }
 
   @override

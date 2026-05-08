@@ -10,6 +10,24 @@ class CitasService {
   //! se inicializa dotenv para cargar las variables de entorno
   final String baseUrl = dotenv.env['URL_API']!;
 
+  bool _isSuccessStatus(int statusCode) {
+    return statusCode == 200 ||
+        statusCode == 201 ||
+        statusCode == 202 ||
+        statusCode == 204;
+  }
+
+  String _estadoDesdeRespuesta(String respuesta) {
+    final r = respuesta.trim().toUpperCase();
+    if (r == 'ACEPTADA' || r == 'CONFIRMADA' || r == 'COMPLETADA') {
+      return 'CONFIRMADA';
+    }
+    if (r == 'RECHAZADA' || r == 'CANCELADA') {
+      return 'CANCELADA';
+    }
+    return 'PENDIENTE';
+  }
+
   Future<List<Citas>> _parseCitasResponse(http.Response response) async {
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -123,9 +141,72 @@ class CitasService {
 
       final response = await http.put(uri, headers: headers, body: body);
 
-      return response.statusCode == 200;
+      return _isSuccessStatus(response.statusCode);
     } catch (e) {
       throw Exception('Error al actualizar citas: $e');
+    }
+  }
+
+  /// Marca una cita como completada (equivalente funcional a confirmada para este backend).
+  /// Usa payload compacto con IDs para evitar fallos por objetos anidados completos.
+  Future<bool> marcarComoCompletada(Citas cita) async {
+    if (cita.id == null) return false;
+
+    try {
+      final uri = Uri.parse('${baseUrl}cita/v1/update');
+      final headers = await ApiHelper.getHeadersWithAuth();
+
+      final basePayload = {
+        'id': cita.id,
+        'especialidad': {'id': cita.especialidad.id},
+        'medico': {'id': cita.medico.id},
+        'usuario': {'id': cita.usuario.id},
+        'motivo_consulta': cita.motivo_consulta,
+        'tipo_consulta': cita.tipo_consulta,
+        'fecha_cita': cita.fecha_cita.toUtc().toIso8601String(),
+        'latitud': cita.latitud,
+        'longitud': cita.longitud,
+        'precio': cita.precio,
+        'fecha_registro': cita.fecha_registro.toUtc().toIso8601String(),
+        if (cita.respuesta_medico.isNotEmpty)
+          'respuesta_medico': cita.respuesta_medico,
+      };
+
+      // Algunos backends usan CONFIRMADA y otros COMPLETADA para el estado final.
+      for (final estado in const ['CONFIRMADA', 'COMPLETADA']) {
+        final body = jsonEncode({...basePayload, 'estado': estado});
+        final response = await http.put(uri, headers: headers, body: body);
+        if (_isSuccessStatus(response.statusCode)) {
+          return true;
+        }
+        debugPrint(
+            'marcarComoCompletada intento $estado falló: ${response.statusCode} ${response.body}');
+      }
+
+      final citaActualizada = Citas(
+        id: cita.id,
+        especialidad: cita.especialidad,
+        fecha_registro: cita.fecha_registro,
+        motivo_consulta: cita.motivo_consulta,
+        precio: cita.precio,
+        estado: 'CONFIRMADA',
+        tipo_consulta: cita.tipo_consulta,
+        fecha_cita: cita.fecha_cita,
+        latitud: cita.latitud,
+        longitud: cita.longitud,
+        medico: cita.medico,
+        usuario: cita.usuario,
+        respuesta_medico: cita.respuesta_medico,
+      );
+
+      if (await updateCitas(citaActualizada)) {
+        return true;
+      }
+
+      // Fallback al endpoint de respuesta del medico, usado ya en notificaciones.
+      return await responderCita(citaId: cita.id!, respuesta: 'Aceptada');
+    } catch (e) {
+      throw Exception('Error al marcar cita como completada: $e');
     }
   }
 
@@ -195,11 +276,29 @@ class CitasService {
   }) async {
     try {
       final headers = await ApiHelper.getHeadersWithAuth();
+      final updateUri = Uri.parse('${baseUrl}cita/v1/update');
+      final estado = _estadoDesdeRespuesta(respuesta);
+
+      // Prioriza el endpoint actualizado del backend (PUT cita/v1/update)
+      final updateBody = jsonEncode({
+        'id': citaId,
+        'estado': estado,
+        'respuesta_medico': respuesta,
+      });
+      final updateResponse =
+          await http.put(updateUri, headers: headers, body: updateBody);
+      if (_isSuccessStatus(updateResponse.statusCode)) {
+        return true;
+      }
+      debugPrint(
+          'responderCita update falló: ${updateResponse.statusCode} ${updateResponse.body}');
+
+      // Fallback legacy
       final uri = Uri.parse(
           '${baseUrl}cita/v1/citas/$citaId/respuesta?respuesta=${Uri.encodeComponent(respuesta)}');
 
       final response = await http.put(uri, headers: headers);
-      return response.statusCode == 200;
+      return _isSuccessStatus(response.statusCode);
     } catch (e) {
       throw Exception('Error al responder cita: $e');
     }

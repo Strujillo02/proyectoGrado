@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/services/auth_service.dart';
+import 'package:frontend/services/medico_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:frontend/widgets/common_appbar.dart';
 
@@ -54,6 +56,55 @@ class HomeMedi extends StatelessWidget {
                     ),
                     child: const Text(
                       'Historial de citas',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: 300,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      final user = await AuthService().getUser();
+                      if (!context.mounted) return;
+
+                      if (user?.id == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content:
+                                Text('No se pudo obtener el usuario actual'),
+                          ),
+                        );
+                        return;
+                      }
+
+                      try {
+                        final medicos = await MedicoService().getMedicos();
+                        final medico = medicos.firstWhere(
+                          (m) => m.usuario.id == user!.id,
+                        );
+
+                        if (!context.mounted) return;
+                        context.push('/medico/editar/${medico.id}');
+                      } catch (_) {
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content:
+                                Text('No se encontró el perfil del médico'),
+                          ),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromRGBO(21, 99, 161, 1),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      'Actualizar datos y tarifa',
                       style: TextStyle(color: Colors.white),
                     ),
                   ),

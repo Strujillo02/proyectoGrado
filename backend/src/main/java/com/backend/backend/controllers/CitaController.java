@@ -3,6 +3,7 @@ package com.backend.backend.controllers;
 import com.backend.backend.Authentication.JwtService;
 import com.backend.backend.DTO.PushNotificationRequest;
 import com.backend.backend.models.Cita;
+import com.backend.backend.models.Especialidad;
 import com.backend.backend.models.Medico;
 import com.backend.backend.models.Usuario;
 import com.backend.backend.repositories.CitaRepository;
@@ -15,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
@@ -153,7 +155,11 @@ public class CitaController {
                 .orElseGet(ArrayList::new);
     }
 
+    @PutMapping("/update")
+    public Cita actualizarCita(@RequestBody Cita cita) {
 
+        return citaService.guardarCita(cita);
+    }
 
 
 
