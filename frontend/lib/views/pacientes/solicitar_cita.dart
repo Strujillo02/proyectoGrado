@@ -25,6 +25,198 @@ class _PedircitaPageState extends State<PedircitaPage> {
   final _numeroViaController = TextEditingController();
   final _numeroViviendaController = TextEditingController();
 
+  static String _stripDiacritics(String input) {
+    const map = {
+      'á': 'a',
+      'à': 'a',
+      'ä': 'a',
+      'â': 'a',
+      'Á': 'a',
+      'À': 'a',
+      'Ä': 'a',
+      'Â': 'a',
+      'é': 'e',
+      'è': 'e',
+      'ë': 'e',
+      'ê': 'e',
+      'É': 'e',
+      'È': 'e',
+      'Ë': 'e',
+      'Ê': 'e',
+      'í': 'i',
+      'ì': 'i',
+      'ï': 'i',
+      'î': 'i',
+      'Í': 'i',
+      'Ì': 'i',
+      'Ï': 'i',
+      'Î': 'i',
+      'ó': 'o',
+      'ò': 'o',
+      'ö': 'o',
+      'ô': 'o',
+      'Ó': 'o',
+      'Ò': 'o',
+      'Ö': 'o',
+      'Ô': 'o',
+      'ú': 'u',
+      'ù': 'u',
+      'ü': 'u',
+      'û': 'u',
+      'Ú': 'u',
+      'Ù': 'u',
+      'Ü': 'u',
+      'Û': 'u',
+      'ñ': 'n',
+      'Ñ': 'n',
+    };
+
+    final b = StringBuffer();
+    for (final ch in input.characters) {
+      b.write(map[ch] ?? ch);
+    }
+    return b.toString();
+  }
+
+  static String _normKey(String s) =>
+      _stripDiacritics(s).toLowerCase().trim().replaceAll(RegExp(r'\s+'), ' ');
+
+  static const List<String> _sintomasPsicologo = [
+    'Ansiedad',
+    'Depresión',
+    'Estrés',
+    'Estrés postraumático',
+    'Insomnio',
+    'Tristeza',
+  ];
+
+  static const List<String> _sintomasMedicoGeneral = [
+    'Cansancio',
+    'Congestión nasal',
+    'Diarrea',
+    'Dificultad para respirar',
+    'Dolor abdominal',
+    'Dolor al respirar',
+    'Dolor de cabeza',
+    'Dolor de estómago',
+    'Dolor de garganta',
+    'Dolor de oído',
+    'Dolor en el pecho',
+    'Escalofríos',
+    'Falta de apetito',
+    'Fiebre',
+    'Flema',
+    'Gripe',
+    'Malestar estomacal',
+    'Malestar general',
+    'Mareos',
+    'Migraña',
+    'Náuseas',
+    'Sensibilidad a la luz',
+    'Tos',
+    'Vómitos',
+  ];
+
+  static const List<String> _sintomasFisioterapeuta = [
+    'Dolor articular',
+    'Dolor de espalda',
+    'Dolor de hombro',
+    'Dolor de muñeca',
+    'Dolor de pierna',
+    'Dolor de rodillas',
+    'Dolor en el cuello',
+    'Dolor lumbar',
+    'Dolor muscular',
+    'Lesión en la pierna',
+  ];
+
+  static const Map<String, List<String>> _sintomasPorEspecialista = {
+    // Psicólogo
+    'psicologo': _sintomasPsicologo,
+    'psicologia': _sintomasPsicologo,
+
+    // Médico general
+    'medico general': _sintomasMedicoGeneral,
+    'medicina general': _sintomasMedicoGeneral,
+
+    // Fisioterapeuta
+    'fisioterapeuta': _sintomasFisioterapeuta,
+    'fisioterapia': _sintomasFisioterapeuta,
+  };
+
+  final Set<String> _sintomasSeleccionados = <String>{};
+
+  List<String> _sintomasDisponiblesParaEspecialidad() {
+    final esp = _especialidadSeleccionada?.nombre;
+    if (esp == null) return const [];
+    final key = _normKey(esp);
+    final list = _sintomasPorEspecialista[key];
+    return (list ?? const [])..sort((a, b) => a.compareTo(b));
+  }
+
+  Future<void> _seleccionarSintomas(BuildContext context) async {
+    final disponibles = _sintomasDisponiblesParaEspecialidad();
+    if (disponibles.isEmpty) return;
+
+    final seleccion = Set<String>.of(_sintomasSeleccionados);
+
+    final result = await showDialog<Set<String>>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('Selecciona síntomas'),
+          content: StatefulBuilder(
+            builder: (ctx, setLocalState) {
+              return SizedBox(
+                width: double.maxFinite,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: disponibles.length,
+                  itemBuilder: (ctx, i) {
+                    final item = disponibles[i];
+                    final checked = seleccion.contains(item);
+                    return CheckboxListTile(
+                      value: checked,
+                      title: Text(item),
+                      controlAffinity: ListTileControlAffinity.leading,
+                      onChanged: (val) {
+                        setLocalState(() {
+                          if (val == true) {
+                            seleccion.add(item);
+                          } else {
+                            seleccion.remove(item);
+                          }
+                        });
+                      },
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(null),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(seleccion),
+              child: const Text('Aceptar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (!mounted || result == null) return;
+    setState(() {
+      _sintomasSeleccionados
+        ..clear()
+        ..addAll(result);
+      motivoConsultaController.text = _sintomasSeleccionados.join(', ');
+    });
+  }
+
   static const List<String> _barrios = [
     'Alameda',
     'Alvernia',
@@ -110,6 +302,7 @@ class _PedircitaPageState extends State<PedircitaPage> {
 
   String _estrellasCalificacion(double valor) {
     final v = valor.clamp(0, 5).toDouble();
+
     final llenas = v.round();
     final vacias = 5 - llenas;
     return '${'★' * llenas}${'☆' * vacias}';
@@ -415,6 +608,9 @@ class _PedircitaPageState extends State<PedircitaPage> {
                                         .firstWhere((e) => e.nombre == val);
                                     // Reset médico seleccionado al cambiar especialidad
                                     _medicoSeleccionado = null;
+                                    // Reset síntomas al cambiar especialidad
+                                    _sintomasSeleccionados.clear();
+                                    motivoConsultaController.clear();
                                   });
                                   final id = _especialidadSeleccionada?.id;
                                   if (id != null)
@@ -527,16 +723,46 @@ class _PedircitaPageState extends State<PedircitaPage> {
                           ),
                         SizedBox(
                           width: 300,
-                          child: TextFormField(
-                            controller: motivoConsultaController,
-                            decoration: const InputDecoration(
-                              labelText: 'Motivo consulta*',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.search),
-                            ),
-                            validator: (value) => value == null || value.isEmpty
-                                ? 'Este campo es obligatorio'
-                                : null,
+                          child: Builder(
+                            builder: (ctx) {
+                              final disponibles =
+                                  _sintomasDisponiblesParaEspecialidad();
+                              final hasEspecialidad =
+                                  _especialidadSeleccionada != null;
+                              final hasSintomas = disponibles.isNotEmpty;
+                              final enabledSelector =
+                                  hasEspecialidad && hasSintomas;
+
+                              return TextFormField(
+                                controller: motivoConsultaController,
+                                readOnly: enabledSelector,
+                                onTap: enabledSelector
+                                    ? () => _seleccionarSintomas(ctx)
+                                    : null,
+                                decoration: InputDecoration(
+                                  labelText: 'Motivo consulta (síntomas)*',
+                                  border: const OutlineInputBorder(),
+                                  prefixIcon: const Icon(Icons.search),
+                                  suffixIcon: enabledSelector
+                                      ? const Icon(
+                                          Icons.keyboard_arrow_down_outlined,
+                                        )
+                                      : const Icon(Icons.info_outline),
+                                  helperText: enabledSelector
+                                      ? 'Puedes seleccionar varios'
+                                      : (hasEspecialidad
+                                          ? 'Escribe el motivo o selecciona otra especialidad'
+                                          : 'Selecciona una especialidad para ver síntomas'),
+                                ),
+                                validator: (value) {
+                                  final v = (value ?? '').trim();
+                                  if (v.isNotEmpty) return null;
+                                  return enabledSelector
+                                      ? 'Selecciona al menos un síntoma'
+                                      : 'Este campo es obligatorio';
+                                },
+                              );
+                            },
                           ),
                         ),
                         const SizedBox(height: 16),
